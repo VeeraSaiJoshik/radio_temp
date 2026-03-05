@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+dist/
+build/
+*.spec
+*.egg-info/
+.DS_Store
+radcopilot.db
+*.db
+.env
