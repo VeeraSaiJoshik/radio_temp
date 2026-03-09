@@ -1,41 +1,18 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────────────
-# Radiology Copilot — Build Script
-# Compiles the app to a single macOS executable using PyInstaller.
-# ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
-APP_NAME="radiology-copilot"
-ENTRY="main.py"
+echo "==> Installing Python dependencies..."
+python3 -m pip install -r requirements.txt
 
-echo "==> Installing dependencies..."
-pip install -r requirements.txt
-pip install pyinstaller
+echo "==> Installing Electron dependencies..."
+npm install
 
-echo "==> Building ${APP_NAME}..."
-pyinstaller \
-    --onefile \
-    --windowed \
-    --name "${APP_NAME}" \
-    --add-data "config.py:." \
-    --hidden-import "pynput.keyboard._darwin" \
-    --hidden-import "pynput.mouse._darwin" \
-    --hidden-import "uvicorn.logging" \
-    --hidden-import "uvicorn.protocols.http" \
-    --hidden-import "uvicorn.protocols.http.auto" \
-    --hidden-import "uvicorn.protocols.websockets" \
-    --hidden-import "uvicorn.protocols.websockets.auto" \
-    --hidden-import "uvicorn.lifespan" \
-    --hidden-import "uvicorn.lifespan.on" \
-    "${ENTRY}"
+echo "==> Validating desktop sources..."
+npm run lint:desktop
+python3 -m compileall main.py desktop_bridge live
 
 echo ""
-echo "==> Build complete!"
-echo "    Executable: dist/${APP_NAME}"
-echo ""
-echo "==> macOS Notes:"
-echo "    - Screen Recording permission required (System Settings → Privacy & Security)"
-echo "    - Accessibility permission required for global hotkeys"
-echo "    - For distribution, code sign with: codesign --force --deep --sign - dist/${APP_NAME}"
-echo "    - To bypass Gatekeeper during dev: xattr -rd com.apple.quarantine dist/${APP_NAME}"
+echo "Electron development environment is ready."
+echo "Run \`npm start\` to launch the desktop shell."
+echo "Run \`python3 main.py --diff\` for the daily disagreement report."

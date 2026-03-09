@@ -10,7 +10,7 @@ import random
 import time
 import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 import config
@@ -134,6 +134,54 @@ async def flag(req: FlagRequest):
 @app.get("/health")
 async def health():
     return {"status": "ok", "mock": True}
+
+
+@app.websocket("/live/screenshot")
+async def live_screenshot_socket(websocket: WebSocket):
+    """
+    Temporary localhost websocket used by the Gemini Live scaffold.
+    Accepts discrete screenshot payloads and immediately acks them.
+    """
+    await websocket.accept()
+
+    try:
+        while True:
+            message = await websocket.receive_json()
+            request_id = message.get("request_id", "")
+            image_hash = message.get("image_hash", "")
+            reason = message.get("reason", "")
+            payload_type = message.get("type")
+
+            if payload_type != "screenshot.capture" or not request_id:
+                await websocket.send_json(
+                    {
+                        "type": "screenshot.ack",
+                        "request_id": request_id,
+                        "status": "error",
+                        "backend_event_id": "",
+                        "received_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        "error": "Invalid screenshot payload",
+                    }
+                )
+                continue
+
+            backend_event_id = str(uuid.uuid4())
+            print(
+                f"[LIVE SCREENSHOT] {backend_event_id[:8]} | request={request_id[:8]} "
+                f"| hash={image_hash} | reason={reason}"
+            )
+            await websocket.send_json(
+                {
+                    "type": "screenshot.ack",
+                    "request_id": request_id,
+                    "status": "ok",
+                    "backend_event_id": backend_event_id,
+                    "received_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "error": None,
+                }
+            )
+    except WebSocketDisconnect:
+        return
 
 
 # ── Standalone runner ────────────────────────────────────────────────────────

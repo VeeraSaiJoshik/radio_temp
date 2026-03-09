@@ -1,0 +1,23 @@
+{
+  "name": "radiology-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron desktop shell for the Radiology Copilot",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node scripts/run-dev-electron.js",
+    "start:demo": "RADCOPILOT_DEMO=1 node scripts/run-dev-electron.js",
+    "start:raw": "electron .",
+    "prepare:dev-app": "node scripts/run-dev-electron.js --prepare-only",
+    "reset:permissions": "tccutil reset Microphone com.radiologycopilot.revu.dev; tccutil reset ScreenCapture com.radiologycopilot.revu.dev; tccutil reset Microphone com.radiologycopilot.revu.dev.helper; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.renderer; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.gpu; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.plugin; tccutil reset Microphone com.github.Electron; tccutil reset ScreenCapture com.github.Electron; exit 0",
+    "lint:desktop": "node --check electron/main.js && node --check electron/preload.js && node --check electron/live/config.js && node --check electron/live/media_utils.js && node --check electron/live/permissions.js && node --check electron/live/screenshot_transport.js && node --check electron/live/service.js && node --check electron/renderer/live_media.js && node --check electron/renderer/app.js && node --check scripts/run-dev-electron.js",
+    "test:desktop": "node --test electron/live/*.test.js"
+  },
+  "devDependencies": {
+    "electron": "^36.9.5"
+  },
+  "dependencies": {
+    "@google/genai": "^1.44.0",
+    "electron-liquid-glass": "^1.1.1"
+  }
+}

@@ -2,7 +2,7 @@
 
 A **Cluely-style floating overlay desktop application** for radiologists — a background AI co-pilot that watches their screen while they read scans, surfaces real-time analysis, flags potential disagreements, and logs everything for end-of-day diff review.
 
-Built with **PyQt6** on **macOS**.
+Built with **Electron** for the desktop shell and Gemini Live integration, plus **Python** for capture, backend orchestration, and storage on **macOS**.
 
 ---
 
@@ -15,23 +15,30 @@ Built with **PyQt6** on **macOS**.
 git clone https://github.com/kwamebb/radiologyproject.git
 cd radiologyproject
 
-# 2. Install dependencies (use pip3 on macOS)
-pip3 install -r requirements.txt
+# 2. Install Python dependencies
+python3 -m pip install -r requirements.txt
 
-# 3. Run it
-python3 main.py
+# 3. Install the Electron shell
+npm install
+
+# 4. Run it
+npm start
 ```
 
-That's it. The app will start a local mock server and run silently in the background.
+That starts the Electron overlay and its local Python bridge. `python3 main.py` now proxies into the Electron flow when the desktop dependencies are installed.
+
+On macOS dev runs, `npm start` launches the locally installed wrapper app `~/Applications/ReVU.app` instead of the transient stock `Electron.app`. If you need to refresh that wrapper without launching it, run `npm run prepare:dev-app`.
 
 **Press `Cmd+Shift+R`** to capture your screen and open the overlay.
 
 ### First-time macOS permissions
 
-You'll need to grant two permissions the first time. macOS will prompt you, or you can do it manually:
+You'll need to grant permissions the first time. macOS will prompt you, or you can do it manually:
 
-1. **System Settings → Privacy & Security → Screen Recording** → add **Terminal** (or iTerm2, whatever you use)
-2. **System Settings → Privacy & Security → Accessibility** → add **Terminal**
+1. **System Settings → Privacy & Security → Screen Recording** → add the **Electron app** you are running (local dev builds may still appear under Terminal/iTerm2)
+2. **System Settings → Privacy & Security → Microphone** → add the same **Electron app** if you want Gemini Live voice capture
+
+For the current dev wrapper, the app name is **ReVU**.
 
 Restart the app after granting permissions.
 
@@ -93,7 +100,7 @@ The core philosophy: **AI doesn't diagnose. The radiologist does. AI confirms, f
 │                                                                     │
 │  ┌──────────────┐    ┌──────────────────┐    ┌──────────────────┐  │
 │  │  PACS Viewer  │    │  Copilot Overlay  │    │   Hotkey / Timer │  │
-│  │  (their scan) │    │  (PyQt6 floating) │◄───│   Cmd+Shift+R   │  │
+│  │  (their scan) │    │ (Electron overlay)│◄───│   Cmd+Shift+R   │  │
 │  └──────────────┘    └────────┬─────────┘    └──────────────────┘  │
 │                               │                                     │
 │                    ┌──────────▼──────────┐                         │
@@ -178,13 +185,15 @@ At end of day, run `python main.py --diff` to see a clean report of all disagree
 
 ```
 radiology-copilot/
-├── main.py                   # Entry point — CLI args, launches overlay + server
+├── main.py                   # CLI entry point — launches Electron or runs the local bridge/diff
 ├── config.py                 # All settings in one place (backend URL, hotkey, timing)
-├── overlay/
-│   ├── __init__.py
-│   ├── window.py             # Floating overlay window (PyQt6) — always-on-top, draggable
-│   ├── hotkey_listener.py    # Global hotkey (Cmd+Shift+R) via pynput
-│   └── styles.py             # Colors, fonts, stylesheet constants
+├── electron/
+│   ├── main.js               # Electron main process, window lifecycle, global hotkey
+│   ├── preload.js            # Safe renderer bridge
+│   └── renderer/             # HTML/CSS/JS overlay UI
+├── desktop_bridge/
+│   ├── service.py            # Python app service for capture, analysis, logging, live events
+│   └── server.py             # FastAPI bridge consumed by Electron
 ├── capture/
 │   ├── __init__.py
 │   └── screenshot.py         # Screen capture (mss) → base64 JPEG + hash
@@ -195,8 +204,9 @@ radiology-copilot/
 ├── storage/
 │   ├── __init__.py
 │   └── db.py                 # SQLite logging + CLI diff printer
-├── requirements.txt          # Pinned dependencies
-├── build.sh                  # PyInstaller → single executable
+├── requirements.txt          # Python dependencies for the bridge/runtime
+├── package.json              # Electron desktop shell dependencies/scripts
+├── build.sh                  # Installs deps and validates the migrated desktop sources
 └── README.md                 # This file
 ```
 
@@ -219,18 +229,21 @@ cd radiologyproject
 python3 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Install Electron dependencies
+npm install
 ```
 
 ### Grant macOS Permissions
 
-Before running, you need to grant two permissions in **System Settings → Privacy & Security**:
+Before running, you may need to grant permissions in **System Settings → Privacy & Security**:
 
-1. **Screen Recording** — required for `mss` to capture screenshots
-2. **Accessibility** — required for `pynput` to listen for global hotkeys
+1. **Screen Recording** — required for screen capture and Gemini Live preview frames
+2. **Microphone** — optional, only needed for Gemini Live voice capture
 
-Add your terminal app (Terminal, iTerm2, etc.) or the built executable to both lists.
+Add the Electron app you launch during local development. Depending on how macOS attributes the request, Terminal/iTerm2 may still need to be allowed for local runs.
 
 ---
 
@@ -239,14 +252,25 @@ Add your terminal app (Terminal, iTerm2, etc.) or the built executable to both l
 ### Launch the Copilot
 
 ```bash
-python main.py
+npm start
 ```
 
 This will:
 1. Start the mock FastAPI server on `http://127.0.0.1:8100`
-2. Launch the floating overlay window
-3. Register the **Cmd+Shift+R** hotkey
-4. Print session info to the terminal
+2. Start the local Python bridge on `http://127.0.0.1:38100`
+3. Launch the Electron desktop overlay
+4. Register the **Cmd+Shift+R** hotkey
+5. Keep the disagreement diff available via `python main.py --diff`
+
+### Launch the Frontend Only Demo
+
+If you just want to see the UI without macOS permissions, screen capture, or the backend:
+
+```bash
+npm run start:demo
+```
+
+This opens the overlay immediately with sample data.
 
 ### Launch Without Mock Server
 
@@ -257,7 +281,7 @@ If your real MCP server is running:
 export RADCOPILOT_BACKEND_URL="https://your-mcp-server.com"
 
 # Launch without starting the mock
-python main.py --no-server
+RADCOPILOT_NO_SERVER=1 npm start
 ```
 
 ### View Today's Diff Report
@@ -403,7 +427,7 @@ The mock server is a **drop-in placeholder**. To swap it for your real MCP serve
 
 ```bash
 export RADCOPILOT_BACKEND_URL="https://your-mcp-server.com"
-python main.py --no-server
+RADCOPILOT_NO_SERVER=1 npm start
 ```
 
 ### Option B: Edit config.py
@@ -437,14 +461,12 @@ All settings live in `config.py`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `BACKEND_URL` | `http://127.0.0.1:8100` | Backend server URL (env: `RADCOPILOT_BACKEND_URL`) |
+| `DESKTOP_BRIDGE_PORT` | `38100` | Local FastAPI bridge port used by Electron |
+| `DESKTOP_HOTKEY` | `CommandOrControl+Shift+R` | Electron accelerator for the global capture shortcut |
 | `REQUEST_TIMEOUT` | `8` | Seconds before backend call times out |
-| `OVERLAY_WIDTH` | `420` | Overlay window width in pixels |
-| `OVERLAY_HEIGHT` | `220` | Overlay window height in pixels |
-| `OVERLAY_OPACITY` | `0.92` | Window transparency (0.0–1.0) |
 | `AUTO_DISMISS_SECONDS` | `15` | Auto-hide overlay after N seconds (0 = never) |
 | `OVERLAY_MARGIN_RIGHT` | `30` | Pixels from right screen edge |
 | `OVERLAY_MARGIN_BOTTOM` | `60` | Pixels from bottom screen edge |
-| `HOTKEY` | `<cmd>+<shift>+r` | Global hotkey (pynput format) |
 | `TIMER_INTERVAL_SECONDS` | `0` | Auto-capture interval (0 = disabled) |
 | `SCREENSHOT_JPEG_QUALITY` | `85` | JPEG compression quality |
 | `DB_PATH` | `./radcopilot.db` | SQLite database file path (env: `RADCOPILOT_DB`) |
@@ -458,17 +480,17 @@ All settings live in `config.py`:
 ./build.sh
 ```
 
-This runs PyInstaller and produces a single executable at `dist/radiology-copilot`.
+This installs the Python and Electron dependencies, then validates the desktop sources.
 
 ### macOS Distribution Notes
 
 | Requirement | Details |
 |-------------|---------|
 | **Screen Recording** | Required on macOS 10.15+. `mss` will fail silently without it. |
-| **Accessibility** | Required for global hotkeys via `pynput`. |
-| **Code Signing** | `codesign --force --deep --sign - dist/radiology-copilot` |
-| **Gatekeeper** | Unsigned builds get blocked. Dev workaround: `xattr -rd com.apple.quarantine dist/radiology-copilot` |
-| **Notarization** | Required for distribution outside the App Store. Use `xcrun notarytool`. |
+| **Microphone** | Required only if you enable Gemini Live voice capture. |
+| **Code Signing** | Required for shipping a packaged Electron app outside local development. |
+| **Gatekeeper** | Unsigned Electron builds are blocked by default on macOS. |
+| **Notarization** | Still required for external distribution. |
 
 ---
 
@@ -476,14 +498,14 @@ This runs PyInstaller and produces a single executable at `dist/radiology-copilo
 
 ### Screen Recording
 1. Open **System Settings → Privacy & Security → Screen Recording**
-2. Click **+** and add your terminal app or the built executable
+2. Click **+** and add the Electron app you launch for local development (or Terminal/iTerm2 if macOS attributes the permission there)
 3. Restart the app
 
-If permission is missing, the app will show a dialog with instructions on launch.
+If permission is missing, the Electron overlay surfaces an in-app warning from the Python bridge.
 
-### Accessibility (for global hotkeys)
-1. Open **System Settings → Privacy & Security → Accessibility**
-2. Click **+** and add your terminal app or the built executable
+### Microphone (for Gemini Live voice capture)
+1. Open **System Settings → Privacy & Security → Microphone**
+2. Click **+** and add the Electron app or the terminal app used to launch it locally
 3. You may need to restart the app
 
 ---
@@ -544,15 +566,14 @@ The AI **assists**, never **diagnoses**. This keeps the system in FDA Class II t
 
 | Package | Purpose |
 |---------|---------|
-| `PyQt6` | Desktop overlay UI |
+| `Electron` | Desktop overlay shell and global shortcut |
 | `mss` | Fast cross-platform screenshot capture |
 | `Pillow` | Image processing (JPEG encoding) |
 | `httpx` | Async HTTP client for backend communication |
-| `pynput` | Global hotkey listener |
 | `FastAPI` | Mock backend server |
 | `uvicorn` | ASGI server for FastAPI |
 | `pydantic` | Request/response validation |
-| `pyobjc-framework-Cocoa` | macOS-specific window behavior (exclude from screenshots) |
+| `@google/genai` | Gemini Live integration in Electron |
 
 ---
 
