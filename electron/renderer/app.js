@@ -25,7 +25,7 @@ const state = {
   screenshotHistory: [],
   demoMode: false,
   captureInFlight: false,
-  uiMode: 'bar',
+  uiMode: 'orb',
   panelExpanded: true,
   inputMode: 'notes',     // 'notes' or 'transcript'
   bannerVisible: false
@@ -34,6 +34,7 @@ const state = {
 const elements = {};
 let liveMedia = null;
 let ringLeaveTimer = null;
+let lastAppliedWindowMode = '';
 
 function $(id) {
   return document.getElementById(id);
@@ -68,6 +69,22 @@ function bodyForAnalysis() {
 
 function latestBannerText() {
   return state.confirmationMessage || state.statusMessage || 'Ready';
+}
+
+function syncWindowMode() {
+  if (!window.copilotDesktop || state.uiMode === lastAppliedWindowMode) {
+    return;
+  }
+
+  lastAppliedWindowMode = state.uiMode;
+  void window.copilotDesktop.setWindowMode(state.uiMode).catch(() => {
+    lastAppliedWindowMode = '';
+  });
+}
+
+function collapseOverlay() {
+  state.uiMode = 'orb';
+  render();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -235,9 +252,13 @@ function renderAnalysis() {
 }
 
 function renderMode() {
-  elements.panelColumn.classList.remove('collapsed');
-  elements.panelColumn.classList.add('panel-open');
-  elements.inputBar.classList.remove('input-hidden');
+  const orbMode = state.uiMode === 'orb';
+  elements.overlayRoot.classList.toggle('orb-mode', orbMode);
+  elements.overlayRoot.classList.toggle('bar-mode', !orbMode);
+  elements.panelColumn.classList.toggle('collapsed', orbMode);
+  elements.panelColumn.classList.toggle('panel-open', !orbMode);
+  elements.inputBar.classList.toggle('input-hidden', orbMode);
+  syncWindowMode();
 }
 
 function render() {
@@ -340,7 +361,7 @@ function applyEvent(event) {
       state.captureInFlight = false;
       state.flagMode = false;
       window.setTimeout(() => {
-        window.copilotDesktop.hideWindow();
+        collapseOverlay();
       }, 1600);
       break;
     case 'live.connection':
@@ -370,6 +391,10 @@ function applyEvent(event) {
       break;
     case 'live.screenshot':
       upsertScreenshot(event.event || {});
+      if (event.event && event.event.image_b64) {
+        state.activeView = 'QA';
+        state.uiMode = 'bar';
+      }
       break;
     case 'live.audio':
     case 'live.audio_clear':
@@ -395,6 +420,7 @@ function handleSimulate() {
   state.aiRevealed = false;
   state.flagMode = false;
   state.bannerVisible = false;
+  state.uiMode = 'bar';
   render();
 
   setTimeout(() => {
@@ -417,6 +443,7 @@ async function handleCapture() {
   state.aiRevealed = false;
   state.flagMode = false;
   state.bannerVisible = false;
+  state.uiMode = 'bar';
   render();
 
   try {
@@ -440,7 +467,7 @@ async function handleDismissAndHide() {
     }
   }
 
-  await window.copilotDesktop.hideWindow();
+  collapseOverlay();
 }
 
 async function handleSend() {
@@ -528,7 +555,7 @@ function bindEvents() {
   // Mini-orb → collapse to orb mode
   elements.miniOrb.addEventListener('click', () => {
     state.activeView = 'Insights';
-    render();
+    collapseOverlay();
   });
 
   // Doctor input
@@ -617,6 +644,7 @@ function bindEvents() {
 
   // Ask button → focus input
   elements.askButton.addEventListener('click', () => {
+    state.uiMode = 'bar';
     render();
     window.requestAnimationFrame(() => {
       elements.askInput.focus();
@@ -636,6 +664,14 @@ function bindEvents() {
     appendTranscript('system', message);
     state.statusMessage = message;
     render();
+  });
+
+  window.copilotDesktop.onWindowModeChange((payload) => {
+    const nextMode = payload && payload.mode === 'bar' ? 'bar' : 'orb';
+    if (state.uiMode !== nextMode) {
+      state.uiMode = nextMode;
+      render();
+    }
   });
 
   // Live events
@@ -665,6 +701,7 @@ function bindEvents() {
 
 async function bootstrap() {
   Object.assign(elements, {
+    overlayRoot: $('overlay-root'),
     heroTitle: $('hero-title'),
     heroBody: $('hero-body'),
     statusBanner: $('status-banner'),

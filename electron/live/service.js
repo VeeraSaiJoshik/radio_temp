@@ -3,6 +3,7 @@ const { GoogleGenAI } = require('@google/genai');
 const {
   CALL_HOTKEY_DECLARATION,
   COMMAND_TIMEOUT_MS,
+  CLOSE_OVERLAY_DECLARATION,
   MAX_RECONNECTS,
   RECONNECT_DELAY_MS,
   TAKE_SCREENSHOT_DECLARATION,
@@ -43,6 +44,11 @@ class ElectronLiveService {
       options.hotkeyTrigger ||
       (async function noopHotkey() {
         return { ok: false, error: 'Hotkey trigger not configured' };
+      });
+    this.closeOverlayTrigger =
+      options.closeOverlayTrigger ||
+      (async function noopCloseOverlay() {
+        return { ok: false, error: 'Close overlay trigger not configured' };
       });
     this.rendererRequest =
       options.rendererRequest ||
@@ -522,6 +528,8 @@ class ElectronLiveService {
         result = await this._captureAndSendScreenshot(args, functionCallId);
       } else if (functionName === CALL_HOTKEY_DECLARATION.name) {
         result = await this._triggerHotkey(args);
+      } else if (functionName === CLOSE_OVERLAY_DECLARATION.name) {
+        result = await this._triggerCloseOverlay(args);
       } else {
         result = {
           status: 'error',
@@ -679,6 +687,23 @@ class ElectronLiveService {
     } catch (error) {
       const message = error && error.message ? error.message : String(error);
       this._emitSystemMessage(`[live] Hotkey trigger failed: ${message}`);
+      return { status: 'error', reason, error: message };
+    }
+  }
+
+  async _triggerCloseOverlay(args) {
+    const reason =
+      typeof args.reason === 'string' && args.reason.trim()
+        ? args.reason.trim()
+        : 'User requested close';
+
+    try {
+      await this.closeOverlayTrigger();
+      this._emitSystemMessage(`[live] Overlay closed: ${reason}`);
+      return { status: 'ok', reason, error: null };
+    } catch (error) {
+      const message = error && error.message ? error.message : String(error);
+      this._emitSystemMessage(`[live] Overlay close failed: ${message}`);
       return { status: 'error', reason, error: message };
     }
   }

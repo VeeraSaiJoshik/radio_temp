@@ -69,6 +69,18 @@ button, input, textarea {
   -webkit-app-region: drag;
 }
 
+#overlay-root.orb-mode {
+  display: block;
+}
+
+#overlay-root.orb-mode #panel-column {
+  display: none;
+}
+
+#overlay-root.bar-mode #panel-column {
+  display: flex;
+}
+
 button, input, textarea, a, .pill, .btn, .satellite, #orb,
 #ask-input, #send-button, .toggle-pill, #mini-orb {
   -webkit-app-region: no-drag;
@@ -701,13 +713,21 @@ textarea::placeholder, input[type="text"]::placeholder {
 
 #orb-container {
   display: none;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+#overlay-root.orb-mode #orb-container {
+  display: block;
 }
 
 #orb {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  right: 12px;
+  bottom: 12px;
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -801,8 +821,8 @@ textarea::placeholder, input[type="text"]::placeholder {
 
 .satellite {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  right: 23px;
+  bottom: 23px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -816,7 +836,7 @@ textarea::placeholder, input[type="text"]::placeholder {
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(0, 0);
   transition: all 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
   z-index: 99;
@@ -829,7 +849,7 @@ textarea::placeholder, input[type="text"]::placeholder {
 
 #orb-container.ring-open .satellite {
   opacity: 1;
-  transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty)));
+  transform: translate(var(--tx), var(--ty));
   pointer-events: auto;
 }
 
@@ -842,7 +862,7 @@ textarea::placeholder, input[type="text"]::placeholder {
   background: var(--glass-fill-strong);
   box-shadow: inset 0 0 0 1px rgba(255, 202, 148, 0.18);
   color: var(--amber-text);
-  transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.08);
+  transform: translate(var(--tx), var(--ty)) scale(1.08);
 }
 
 .hidden {

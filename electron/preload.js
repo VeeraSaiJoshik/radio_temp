@@ -68,6 +68,9 @@ contextBridge.exposeInMainWorld('copilotDesktop', {
   onLiveEvent: (callback) => {
     ipcRenderer.on('live:event', (_event, liveEvent) => callback(liveEvent));
   },
+  onWindowModeChange: (callback) => {
+    ipcRenderer.on('desktop:window-mode', (_event, payload) => callback(payload));
+  },
   onDesktopError: (callback) => {
     ipcRenderer.on('desktop:error', (_event, message) => callback(message));
   }

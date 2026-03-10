@@ -179,6 +179,48 @@ test('call_hotkey tool calls the configured hotkey trigger and returns success',
   });
 });
 
+test('close_overlay tool hides the overlay through the configured trigger', async () => {
+  const closeReasons = [];
+  const { service, fakeSession } = createService({
+    closeOverlayTrigger: async () => {
+      closeReasons.push('closed');
+    }
+  });
+
+  await service._handleToolCalls([
+    {
+      id: 'call-1',
+      name: 'close_overlay',
+      args: { reason: 'Hide the overlay now' }
+    }
+  ]);
+
+  assert.equal(closeReasons.length, 1);
+  assert.equal(fakeSession.toolResponses.length, 1);
+  assert.deepEqual(fakeSession.toolResponses[0].functionResponses[0].response, {
+    status: 'ok',
+    reason: 'Hide the overlay now',
+    error: null
+  });
+});
+
+test('take_screenshot tool emits screenshot history with image data for QA', async () => {
+  const { service, events } = createService();
+
+  await service._handleToolCalls([
+    {
+      id: 'call-1',
+      name: 'take_screenshot',
+      args: { reason: 'Capture for QA' }
+    }
+  ]);
+
+  const screenshotEvents = events.filter((event) => event.type === 'live.screenshot');
+  assert.ok(screenshotEvents.length >= 1);
+  assert.equal(screenshotEvents.at(-1).event.image_b64, 'aGVsbG8=');
+  assert.equal(screenshotEvents.at(-1).event.image_hash, 'hash-123');
+});
+
 test('tool call cancellation drops a late screenshot tool response', async () => {
   const { service, fakeSession } = createService({
     screenshotTransport: {

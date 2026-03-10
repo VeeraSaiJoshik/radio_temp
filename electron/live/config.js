@@ -31,6 +31,7 @@ Behavior rules:
 - If the visible screen materially changes (new study loaded, different view, report opened), call the \`take_screenshot\` tool so the local backend receives a full-resolution capture.
 - If the user says "take ss", "take screenshot", or a clearly equivalent instruction, call \`take_screenshot\` immediately.
 - If the user says "call hotkey", "press the shortcut", "open/show/run the app", "show the overlay", or asks for a fresh full analysis of the current screen, call \`call_hotkey\` immediately.
+- If the user says "close", "hide", or "dismiss" the overlay/app, call \`close_overlay\` immediately.
 - Prefer \`call_hotkey\` when the user wants the overlay/backend analysis refreshed; prefer \`take_screenshot\` when you just need a full-resolution still without changing overlay state.
 - If the screen changed substantially and a fresh local analysis card would help more than a standalone screenshot, you may proactively call \`call_hotkey\`.
 - If a preview frame is too small or blurry to answer reliably, prefer calling \`take_screenshot\` instead of guessing.
@@ -48,6 +49,7 @@ const BOOTSTRAP_PROMPT = (
   "Stay quiet unless the user asks a question or a meaningful screen change warrants `take_screenshot`. " +
   "Call `take_screenshot` immediately when the user says take ss. " +
   "Call `call_hotkey` immediately when the user asks you to press the shortcut, open/show/run the app or overlay, or rerun the full analysis. " +
+  "Call `close_overlay` immediately when the user asks you to close, hide, or dismiss the overlay or app. " +
   "Do not respond to this message. Stay silent until the user speaks."
 );
 
@@ -68,6 +70,19 @@ const CALL_HOTKEY_DECLARATION = {
   name: 'call_hotkey',
   description:
     'Trigger the copilot hotkey action: show the overlay window and run a fresh full screen capture plus AI analysis. Use this when the user asks to open/show/run the app or overlay, press the shortcut, or rerun analysis.',
+  parameters: {
+    type: 'object',
+    properties: {
+      reason: { type: 'string' }
+    },
+    required: ['reason']
+  }
+};
+
+const CLOSE_OVERLAY_DECLARATION = {
+  name: 'close_overlay',
+  description:
+    'Hide the copilot overlay window without taking a new screenshot. Use this when the user asks to close, hide, or dismiss the overlay or app.',
   parameters: {
     type: 'object',
     properties: {
@@ -159,6 +174,12 @@ function buildLiveConnectConfig(runtimeConfig, sessionResumptionHandle = '') {
             description: CALL_HOTKEY_DECLARATION.description,
             parametersJsonSchema: CALL_HOTKEY_DECLARATION.parameters,
             behavior: Behavior.NON_BLOCKING
+          },
+          {
+            name: CLOSE_OVERLAY_DECLARATION.name,
+            description: CLOSE_OVERLAY_DECLARATION.description,
+            parametersJsonSchema: CLOSE_OVERLAY_DECLARATION.parameters,
+            behavior: Behavior.NON_BLOCKING
           }
         ]
       }
@@ -223,6 +244,7 @@ module.exports = {
   RECONNECT_DELAY_MS,
   SYSTEM_PROMPT,
   CALL_HOTKEY_DECLARATION,
+  CLOSE_OVERLAY_DECLARATION,
   TAKE_SCREENSHOT_DECLARATION,
   buildLiveConnectConfig,
   buildRealtimeInputConfig,

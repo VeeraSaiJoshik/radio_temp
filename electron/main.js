@@ -57,7 +57,7 @@ let liveRendererReadyPromise = null;
 let resolveLiveRendererReady = null;
 let liveCommandSequence = 0;
 const liveCommandPending = new Map();
-let windowMode = 'bar';
+let windowMode = 'orb';
 let expandedBounds = null;
 
 resetLiveRendererReady();
@@ -234,6 +234,35 @@ function showWindow() {
   mainWindow.moveTop();
 }
 
+function broadcastWindowMode() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  mainWindow.webContents.send('desktop:window-mode', { mode: windowMode });
+}
+
+function collapseOverlay() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  applyWindowMode('orb');
+  showWindow();
+}
+
+async function expandOverlay(options = {}) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  applyWindowMode('bar');
+  showWindow();
+
+  if (options.capture) {
+    await triggerCapture();
+  }
+}
+
 function getPanelBounds(display = screen.getPrimaryDisplay()) {
   const workArea = display.workArea;
   return {
@@ -271,12 +300,14 @@ function applyWindowMode(mode) {
     expandedBounds = expandedBounds || mainWindow.getBounds();
     const display = screen.getDisplayMatching(mainWindow.getBounds());
     mainWindow.setBounds(getOrbBounds(display), true);
+    broadcastWindowMode();
     return;
   }
 
   const display = screen.getDisplayMatching(mainWindow.getBounds());
   const bounds = expandedBounds || getPanelBounds(display);
   mainWindow.setBounds(bounds, true);
+  broadcastWindowMode();
 }
 
 async function triggerCapture() {
@@ -408,7 +439,7 @@ async function openMacPermissionSettings(mediaType) {
 
 function createWindow() {
   const display = screen.getPrimaryDisplay();
-  const initialBounds = getPanelBounds(display);
+  const initialBounds = windowMode === 'orb' ? getOrbBounds(display) : getPanelBounds(display);
 
   mainWindow = new BrowserWindow({
     x: initialBounds.x,
@@ -433,7 +464,7 @@ function createWindow() {
       backgroundThrottling: false
     }
   });
-  expandedBounds = mainWindow.getBounds();
+  expandedBounds = getPanelBounds(display);
 
   // Keep the overlay out of the user's own screenshots and screen shares.
   mainWindow.setContentProtection(true);
@@ -475,7 +506,7 @@ function createWindow() {
       return;
     }
     event.preventDefault();
-    mainWindow.hide();
+    collapseOverlay();
   });
 
   mainWindow.on('closed', () => {
@@ -496,13 +527,12 @@ function registerHotkey() {
       return;
     }
 
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
+    if (mainWindow.isVisible() && windowMode === 'bar') {
+      collapseOverlay();
       return;
     }
 
-    showWindow();
-    await triggerCapture();
+    await expandOverlay({ capture: true });
   });
 }
 
@@ -598,8 +628,10 @@ function buildLiveService() {
     },
     eventSink: emitLiveEvent,
     hotkeyTrigger: async () => {
-      showWindow();
-      await triggerCapture();
+      await expandOverlay({ capture: true });
+    },
+    closeOverlayTrigger: async () => {
+      collapseOverlay();
     }
   });
 }
@@ -626,15 +658,13 @@ ipcMain.on('desktop:set-ignore-mouse', (_event, { ignore }) => {
 });
 
 ipcMain.handle('desktop:hide-window', async () => {
-  if (mainWindow) {
-    mainWindow.hide();
-  }
-  return { ok: true };
+  collapseOverlay();
+  return { ok: true, mode: 'orb' };
 });
 
 ipcMain.handle('desktop:show-window', async () => {
   showWindow();
-  return { ok: true };
+  return { ok: true, mode: windowMode };
 });
 
 ipcMain.handle('desktop:set-window-mode', async (_event, mode) => {
