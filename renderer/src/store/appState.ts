@@ -29,6 +29,8 @@ export interface AppState {
   demoMode: boolean;
   captureInFlight: boolean;
   inputMode: InputMode;
+  aiSpeaking: boolean;
+  aiThinking: boolean;
 }
 
 export const initialState: AppState = {
@@ -55,4 +57,6 @@ export const initialState: AppState = {
   demoMode: false,
   captureInFlight: false,
   inputMode: 'notes',
+  aiSpeaking: false,
+  aiThinking: false,
 };

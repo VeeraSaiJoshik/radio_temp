@@ -30,6 +30,8 @@ type Action =
   | { type: 'UPSERT_SCREENSHOT'; entry: ScreenshotEntry }
   | { type: 'SET_SCREENSHOTS'; entries: ScreenshotEntry[] }
   | { type: 'SET_INPUT_MODE'; mode: InputMode }
+  | { type: 'SET_AI_SPEAKING'; value: boolean }
+  | { type: 'SET_AI_THINKING'; value: boolean }
   | { type: 'ANALYSIS_EVENT'; payload: AnalysisEventPayload };
 
 interface AnalysisEventPayload {
@@ -109,6 +111,12 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'SET_INPUT_MODE':
       return { ...state, inputMode: action.mode };
+
+    case 'SET_AI_SPEAKING':
+      return { ...state, aiSpeaking: action.value, aiThinking: action.value ? false : state.aiThinking };
+
+    case 'SET_AI_THINKING':
+      return { ...state, aiThinking: action.value };
 
     case 'APPLY_SNAPSHOT':
       return {
@@ -212,6 +220,8 @@ export function useAppState() {
   const setHotkey = useCallback((hotkey: string) => dispatch({ type: 'SET_HOTKEY', hotkey }), []);
   const setSessionId = useCallback((id: string) => dispatch({ type: 'SET_SESSION_ID', id }), []);
   const setInputMode = useCallback((mode: InputMode) => dispatch({ type: 'SET_INPUT_MODE', mode }), []);
+  const setAiSpeaking = useCallback((value: boolean) => dispatch({ type: 'SET_AI_SPEAKING', value }), []);
+  const setAiThinking = useCallback((value: boolean) => dispatch({ type: 'SET_AI_THINKING', value }), []);
   const applySnapshot = useCallback((snapshot: BridgeState) => dispatch({ type: 'APPLY_SNAPSHOT', snapshot }), []);
   const applyLiveSnapshot = useCallback((snapshot: LiveStateAPI) => dispatch({ type: 'APPLY_LIVE_SNAPSHOT', snapshot }), []);
 
@@ -252,6 +262,8 @@ export function useAppState() {
       setHotkey,
       setSessionId,
       setInputMode,
+      setAiSpeaking,
+      setAiThinking,
       applySnapshot,
       applyLiveSnapshot,
       setLiveConnected,

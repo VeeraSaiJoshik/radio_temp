@@ -63,6 +63,10 @@ export default function App() {
 
       case 'live.phase':
         actions.setLivePhase(event.phase || '');
+        if (event.phase === 'Waiting for input' || event.phase === 'Listening continuously') {
+          actions.setAiSpeaking(false);
+          actions.setAiThinking(false);
+        }
         break;
 
       case 'live.mic':
@@ -79,6 +83,7 @@ export default function App() {
       case 'live.user_transcript':
         if (event.is_final) {
           actions.appendTranscript('user', event.text || '');
+          actions.setAiThinking(true);
         }
         break;
 
@@ -89,7 +94,14 @@ export default function App() {
         break;
 
       case 'live.audio':
+        actions.setAiSpeaking(true);
+        if (liveMediaRef.current) {
+          void liveMediaRef.current.handleLiveEvent(event);
+        }
+        break;
+
       case 'live.audio_clear':
+        actions.setAiSpeaking(false);
         if (liveMediaRef.current) {
           void liveMediaRef.current.handleLiveEvent(event);
         }

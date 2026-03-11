@@ -115,6 +115,20 @@ button, input, textarea {
   animation: pulseDot 1.4s ease-in-out infinite;
 }
 
+/* Waveform bar animations */
+@keyframes waveUser {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+@keyframes waveAi {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(0.9); }
+}
+@keyframes waveThink {
+  0%, 100% { transform: scaleY(0.2); opacity: 0.4; }
+  50% { transform: scaleY(0.55); opacity: 1; }
+}
+
 /* Textarea focus ring overrides */
 textarea:focus,
 input[type="text"]:focus {

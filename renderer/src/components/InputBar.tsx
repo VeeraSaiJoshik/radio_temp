@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
+import { LiveWaveform } from './LiveWaveform';
 import type { InputMode } from '../store/appState';
 
 interface InputBarProps {
@@ -49,12 +50,12 @@ export function InputBar({ onSend }: InputBarProps) {
         className="app-no-drag flex-1 py-2 border-0 bg-transparent shadow-none text-[#f4f6f8] text-[13px] focus:outline-none focus:shadow-none placeholder:text-[rgba(244,246,248,0.48)]"
       />
 
-      {/* Listening indicator */}
-      {state.live.micActive && (
-        <span className="app-no-drag flex items-center gap-1.5 text-[11.5px] text-[rgba(255,212,168,0.96)] whitespace-nowrap">
-          <span className="w-[7px] h-[7px] rounded-full bg-[#ffca94] animate-pulse-dot" />
-          Listening for audio
-        </span>
+      {/* Live waveform indicator */}
+      {state.live.connected && (
+        state.aiSpeaking ? <LiveWaveform mode="ai" /> :
+        state.aiThinking ? <LiveWaveform mode="thinking" /> :
+        state.live.micActive ? <LiveWaveform mode="user" /> :
+        null
       )}
 
       {/* Input mode toggles */}
