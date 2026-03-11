@@ -42,7 +42,7 @@ export function TopBar({ onMicClick, onAskClick, onSimulateClick }: TopBarProps)
       />
 
       {/* Nav pills */}
-      <div className="app-no-drag flex gap-1 flex-1 relative z-10">
+      <div className="app-no-drag flex gap-1 relative min-w-0">
         {NAV_VIEWS.map(({ label, view, shortcut }) => (
           <button
             key={view}

@@ -11,6 +11,8 @@ export default function App() {
   const { state, actions } = useAppState();
   const liveMediaRef = useRef<ILiveMediaController | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const aiSpeakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevMicActiveRef = useRef<boolean>(false);
 
   // ─── Event application ─────────────────────────────────────────────────────
 
@@ -64,14 +66,20 @@ export default function App() {
       case 'live.phase':
         actions.setLivePhase(event.phase || '');
         if (event.phase === 'Waiting for input' || event.phase === 'Listening continuously') {
-          actions.setAiSpeaking(false);
           actions.setAiThinking(false);
         }
         break;
 
-      case 'live.mic':
-        actions.setLiveMicActive(Boolean(event.active));
+      case 'live.mic': {
+        const nowActive = Boolean(event.active);
+        // Mic just turned off → user finished speaking → AI is thinking
+        if (prevMicActiveRef.current && !nowActive) {
+          actions.setAiThinking(true);
+        }
+        prevMicActiveRef.current = nowActive;
+        actions.setLiveMicActive(nowActive);
         break;
+      }
 
       case 'live.message':
         actions.appendTranscript(
@@ -95,12 +103,20 @@ export default function App() {
 
       case 'live.audio':
         actions.setAiSpeaking(true);
+        // Debounce: keep aiSpeaking true for 1.2s after last audio chunk
+        // so the indicator stays on while the buffer plays out
+        if (aiSpeakingTimerRef.current) clearTimeout(aiSpeakingTimerRef.current);
+        aiSpeakingTimerRef.current = setTimeout(() => {
+          actions.setAiSpeaking(false);
+        }, 1200);
         if (liveMediaRef.current) {
           void liveMediaRef.current.handleLiveEvent(event);
         }
         break;
 
       case 'live.audio_clear':
+        // Interrupted — clear immediately
+        if (aiSpeakingTimerRef.current) clearTimeout(aiSpeakingTimerRef.current);
         actions.setAiSpeaking(false);
         if (liveMediaRef.current) {
           void liveMediaRef.current.handleLiveEvent(event);

@@ -12,7 +12,7 @@
     "start": "npm run build && node dist/scripts/run-dev-electron.js",
     "start:demo": "npm run build && RADCOPILOT_DEMO=1 node dist/scripts/run-dev-electron.js",
     "watch": "tsc --project tsconfig.json --watch",
-    "start:watch": "npm run build && concurrently --kill-others --names \"tsc,vite,electron\" \"tsc --project tsconfig.json --watch --preserveWatchOutput\" \"npm run renderer:dev\" \"NODE_ENV=development VITE_DEV_SERVER_URL=http://localhost:5173 node dist/scripts/run-dev-electron.js\"",
+    "start:watch": "npm run build && concurrently --kill-others --names \"tsc,vite,electron\" \"tsc --project tsconfig.json --watch --preserveWatchOutput\" \"npm run renderer:dev\" \"VITE_DEV_SERVER_URL=http://localhost:5173 node scripts/electron-dev-watch.js\"",
     "start:vite": "npm run build && NODE_ENV=development VITE_DEV_SERVER_URL=http://localhost:5173 node dist/scripts/run-dev-electron.js",
     "start:vite:demo": "npm run build && RADCOPILOT_DEMO=1 VITE_DEV_SERVER_URL=http://localhost:5173 node dist/scripts/run-dev-electron.js",
     "start:raw": "electron .",

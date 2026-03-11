@@ -15,7 +15,7 @@ export function ContentPanel({ onCapture }: ContentPanelProps) {
   return (
     <section
       className={[
-        'flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-[22px] py-[18px] pb-5',
+        'app-no-drag flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-[22px] py-[18px] pb-5',
         'bg-gradient-to-b from-white/[0.02] to-black/[0.08]',
         'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
       ].join(' ')}

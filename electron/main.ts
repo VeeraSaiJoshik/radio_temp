@@ -34,16 +34,6 @@ try {
 
 import { loadLocalEnv } from './env';
 
-if (process.env.NODE_ENV !== 'production') {
-  try {
-    require('electron-reload')(__dirname, {
-      electron: require('electron') as string,
-      hardResetMethod: 'exit',
-      forceHardReset: true,
-      awaitWriteFinish: true,
-    });
-  } catch { /* not installed in production */ }
-}
 
 import { getLiveRuntimeConfig } from './live/config';
 import {
@@ -516,7 +506,12 @@ function createWindow(): void {
     skipTransformProcessType: true
   });
   mainWindow.setWindowButtonVisibility(false);
-  mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  const viteDevUrl = process.env.VITE_DEV_SERVER_URL;
+  if (viteDevUrl) {
+    void mainWindow.loadURL(viteDevUrl);
+  } else {
+    void mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  }
   mainWindow.once('ready-to-show', () => {
     showWindow();
   });
