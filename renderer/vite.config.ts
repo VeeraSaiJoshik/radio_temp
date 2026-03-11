@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   build: {
-    outDir: '../electron/renderer-dist',
+    outDir: '../dist/renderer',
     emptyOutDir: true,
   },
   server: {
