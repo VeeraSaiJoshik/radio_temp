@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import log from 'electron-log/main';
 
 import {
   CALL_HOTKEY_DECLARATION,
@@ -247,12 +248,12 @@ export class ElectronLiveService {
   }
 
   async start(): Promise<void> {
-    console.log('[live] start() called — enabled=%s, model=%s, apiKey=%s',
+    log.info('[live] start() called — enabled=%s, model=%s, apiKey=%s',
       this.runtimeConfig.enabled,
       this.runtimeConfig.model,
       this.runtimeConfig.apiKey ? '***' + this.runtimeConfig.apiKey.slice(-4) : '(none)');
     if (!this.runtimeConfig.enabled || this._connectLoopPromise) {
-      console.log('[live] start() skipped — enabled=%s, loopRunning=%s',
+      log.info('[live] start() skipped — enabled=%s, loopRunning=%s',
         this.runtimeConfig.enabled, Boolean(this._connectLoopPromise));
       return;
     }
@@ -313,7 +314,7 @@ export class ElectronLiveService {
   }
 
   async startMicCapture(): Promise<{ ok: boolean }> {
-    console.log('[live] startMicCapture() called');
+    log.info('[live] startMicCapture() called');
     this._assertEnabled();
     this._assertConnected();
 
@@ -334,7 +335,7 @@ export class ElectronLiveService {
       );
       throw error;
     }
-    console.log('[live] Mic started — sampleRate=%d', this.runtimeConfig.micSampleRate);
+    log.info('[live] Mic started — sampleRate=%d', this.runtimeConfig.micSampleRate);
     this._setMicActive(true);
     this._setPhase('Listening continuously');
     await this._requestPreviewRefresh();
@@ -356,7 +357,7 @@ export class ElectronLiveService {
     }
 
     if (!this._hasVisualInput) {
-      console.log('[live] First preview frame received — enabling visual input');
+      log.info('[live] First preview frame received — enabling visual input');
       this._hasVisualInput = true;
       this._visualAvailability = 'ready';
       this._emitSystemMessage('[live] Screen preview ready');
@@ -414,7 +415,7 @@ export class ElectronLiveService {
   }
 
   notifyRendererError(code: string, message: string): void {
-    console.error('[live] Renderer error: code=%s message=%s', code, message);
+    log.error('[live] Renderer error: code=%s message=%s', code, message);
     const errorMessage = message || 'Live media error';
     if (code === 'screen_unavailable' || code === 'screen_capture_failed') {
       this._hasVisualInput = false;
@@ -474,7 +475,7 @@ export class ElectronLiveService {
   }
 
   private async _connectOnce(): Promise<boolean> {
-    console.log('[live] _connectOnce() — connecting to model=%s', this.runtimeConfig.model);
+    log.info('[live] _connectOnce() — connecting to model=%s', this.runtimeConfig.model);
     let closed = false;
     const closeInfo = await new Promise<{ message: string }>(async (resolve) => {
       try {
@@ -486,7 +487,7 @@ export class ElectronLiveService {
           ),
           callbacks: {
             onopen: () => {
-              console.log('[live] WebSocket opened — model=%s', this.runtimeConfig.model);
+              log.info('[live] WebSocket opened — model=%s', this.runtimeConfig.model);
               this._emitConnection(true, `Gemini Live connected: ${this.runtimeConfig.model}`);
             },
             onmessage: (message: unknown) => {
@@ -500,12 +501,12 @@ export class ElectronLiveService {
                   : ev && ev.message
                     ? ev.message
                     : 'Gemini Live socket error';
-              console.error('[live] WebSocket error:', message);
+              log.error('[live] WebSocket error:', message);
               this._emitSystemMessage(`[live] ${message}`);
             },
             onclose: (event: unknown) => {
               const ev = event as { code?: number; reason?: string };
-              console.log('[live] WebSocket closed — code=%s reason=%s',
+              log.info('[live] WebSocket closed — code=%s reason=%s',
                 ev && ev.code, ev && ev.reason);
               if (closed) {
                 return;
@@ -521,7 +522,7 @@ export class ElectronLiveService {
           }
         });
 
-        console.log('[live] live.connect() resolved — session ready');
+        log.info('[live] live.connect() resolved — session ready');
         this._hasVisualInput = false;
         this._visualAvailability = 'pending';
         this._autoStartMicPending =
@@ -529,7 +530,7 @@ export class ElectronLiveService {
         await this._replayRecoverableMessages();
       } catch (error) {
         const err = error as Error;
-        console.error('[live] live.connect() failed:', err.message || err);
+        log.error('[live] live.connect() failed:', err.message || err);
         closed = true;
         resolve({
           message: err.message || String(err)
@@ -684,7 +685,7 @@ export class ElectronLiveService {
         cancelled: false
       });
 
-      console.log('[live] Tool call: name=%s id=%s args=%j', functionName, functionCallId, args);
+      log.info('[live] Tool call: name=%s id=%s args=%j', functionName, functionCallId, args);
 
       let result: ScreenshotToolResult | ToolCallResult;
       if (functionName === TAKE_SCREENSHOT_DECLARATION.name) {
@@ -1056,7 +1057,7 @@ export class ElectronLiveService {
   }
 
   private _emitConnection(connected: boolean, message: string): void {
-    console.log('[live] Connection state: connected=%s message=%s', connected, message);
+    log.info('[live] Connection state: connected=%s message=%s', connected, message);
     this._state.live.connected = Boolean(connected);
     this._state.live.message = message || (connected ? 'Gemini Live connected' : 'Gemini Live unavailable');
     if (!connected) {

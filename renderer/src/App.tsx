@@ -136,6 +136,8 @@ export default function App() {
         return;
       }
 
+      window.copilotDesktop.setIgnoreMouse(false);
+
       // Get config
       let config;
       try {
@@ -167,10 +169,10 @@ export default function App() {
         actions.setStatus(message);
       });
 
-      window.copilotDesktop.onWindowModeChange((payload) => {
+
+      window.copilotDesktop.onWindowModeChange(({ mode }) => {
         if (cancelled) return;
-        const mode = (payload as { mode?: string })?.mode;
-        if (mode === 'orb' || mode === 'bar') actions.setWindowMode(mode);
+        actions.setWindowMode(mode);
       });
 
       window.copilotDesktop.onLiveEvent((liveEvent) => {
@@ -225,9 +227,6 @@ export default function App() {
         }
       }
 
-      if (!cancelled) {
-        window.copilotDesktop.setIgnoreMouse(false);
-      }
     }
 
     void bootstrap();

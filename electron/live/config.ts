@@ -7,6 +7,7 @@ import {
   StartSensitivity,
   TurnCoverage
 } from '@google/genai';
+import log from 'electron-log/main';
 
 export const SYSTEM_PROMPT = `
 You are the screen-aware assistant for ReVU, a radiology workflow automation tool.
@@ -233,6 +234,8 @@ export function buildLiveConnectConfig(
 export function getLiveRuntimeConfig(options: { demoMode?: boolean } = {}): LiveRuntimeConfig {
   const demoMode = Boolean(options.demoMode);
   const apiKey = process.env.GEMINI_API_KEY || '';
+
+  log.info("here is the api key: ", apiKey);
 
   let initialMessage = 'Gemini Live unavailable';
   if (demoMode) {

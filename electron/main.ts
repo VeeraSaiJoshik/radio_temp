@@ -15,6 +15,11 @@ import {
 import { spawn, spawnSync, ChildProcess } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import log from 'electron-log/main';
+
+log.transports.file.level = 'debug';
+log.transports.console.level = 'debug';
+log.errorHandler.startCatching();
 
 let liquidGlass: {
   addView: (handle: Buffer, options: { cornerRadius: number }) => number;
@@ -24,10 +29,22 @@ try {
   liquidGlass = require('electron-liquid-glass');
 } catch (err) {
   const error = err as Error;
-  console.warn('electron-liquid-glass not available:', error.message);
+  log.warn('electron-liquid-glass not available:', error.message);
 }
 
 import { loadLocalEnv } from './env';
+
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    require('electron-reload')(__dirname, {
+      electron: require('electron') as string,
+      hardResetMethod: 'exit',
+      forceHardReset: true,
+      awaitWriteFinish: true,
+    });
+  } catch { /* not installed in production */ }
+}
+
 import { getLiveRuntimeConfig } from './live/config';
 import {
   ensureMicrophoneAccess,
@@ -35,7 +52,7 @@ import {
 } from './live/permissions';
 import { ElectronLiveService } from './live/service';
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '../..');
 loadLocalEnv(repoRoot);
 
 const bridgeHost = process.env.RADCOPILOT_BRIDGE_HOST || '127.0.0.1';
@@ -129,11 +146,11 @@ function resolvePythonExecutable(): string {
     fallback = candidate;
 
     if (pythonCanStartBridge(candidate)) {
-      console.log(`[bridge] Using Python interpreter: ${candidate} (${label})`);
+      log.info(`[bridge] Using Python interpreter: ${candidate} (${label})`);
       return candidate;
     }
 
-    console.warn(
+    log.warn(
       `[bridge] Skipping Python interpreter without FastAPI/uvicorn: ${candidate} (${label})`
     );
   }
@@ -178,7 +195,7 @@ function startBridge(): void {
   bridgeProcess.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
     bridgeProcess = null;
     if (!appIsQuitting) {
-      console.error(
+      log.error(
         `Bridge exited unexpectedly (code=${code}, signal=${signal || 'none'}).`
       );
     }
@@ -368,7 +385,7 @@ function configureDisplayMedia(): void {
         });
       } catch (error) {
         const err = error as Error;
-        console.error(`Display media request failed: ${err.message}`);
+        log.error(`Display media request failed: ${err.message}`);
         callback({
           video: undefined,
           audio: 'loopback' as const
@@ -388,7 +405,7 @@ function setMacActivationMode(mode: 'regular' | 'accessory' | 'prohibited'): voi
     app.setActivationPolicy(mode);
   } catch (error) {
     const err = error as Error;
-    console.warn(`Failed to set macOS activation policy to ${mode}: ${err.message}`);
+    log.warn(`Failed to set macOS activation policy to ${mode}: ${err.message}`);
   }
 
   if (!app.dock) {
@@ -403,7 +420,7 @@ function setMacActivationMode(mode: 'regular' | 'accessory' | 'prohibited'): voi
     }
   } catch (error) {
     const err = error as Error;
-    console.warn(`Failed to update Dock visibility for ${mode}: ${err.message}`);
+    log.warn(`Failed to update Dock visibility for ${mode}: ${err.message}`);
   }
 }
 
@@ -446,7 +463,7 @@ async function openMacPermissionSettings(mediaType: string): Promise<{ ok: boole
     opened = true;
   } catch (error) {
     const err = error as Error;
-    console.warn(`Failed to open macOS privacy settings for ${mediaType}: ${err.message}`);
+    log.warn(`Failed to open macOS privacy settings for ${mediaType}: ${err.message}`);
   }
 
   if (!opened) {
@@ -455,7 +472,7 @@ async function openMacPermissionSettings(mediaType: string): Promise<{ ok: boole
       opened = true;
     } catch (error) {
       const err = error as Error;
-      console.warn(`Failed to open macOS Security & Privacy settings: ${err.message}`);
+      log.warn(`Failed to open macOS Security & Privacy settings: ${err.message}`);
     }
   }
 
@@ -513,11 +530,11 @@ function createWindow(): void {
         });
         if (glassId >= 0) {
           liquidGlass.unstable_setVariant(glassId, 1); // clear — lighter, more transparent
-          console.log(`Native liquid glass applied (glassId=${glassId})`);
+          log.info(`Native liquid glass applied (glassId=${glassId})`);
         }
       } catch (err) {
         const error = err as Error;
-        console.warn('Failed to apply liquid glass:', error.message);
+        log.warn('Failed to apply liquid glass:', error.message);
       }
     }
   });
@@ -841,7 +858,7 @@ app.whenReady().then(async () => {
   await liveService.start();
 }).catch((error: Error) => {
   const detail = error && error.message ? error.message : String(error);
-  console.error(`Desktop startup failed: ${detail}`);
+  log.error(`Desktop startup failed: ${detail}`);
   dialog.showErrorBox(
     'ReVU failed to start',
     `${detail}\n\nCheck that a project virtualenv with FastAPI/uvicorn is installed.`

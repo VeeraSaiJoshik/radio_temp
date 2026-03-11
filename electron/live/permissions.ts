@@ -1,4 +1,5 @@
 import type { SystemPreferences } from 'electron';
+import log from 'electron-log/main';
 
 export type MediaAccessStatus =
   | 'not-determined'
@@ -116,7 +117,7 @@ export async function ensureMicrophoneAccess(
   }
 
   const refreshed = getMediaAccessInfo(systemPreferences, 'microphone', platform);
-  console.warn(
+  log.warn(
     `[permissions] macOS mic status="${refreshed.status}" — deferring to renderer getUserMedia`
   );
   return refreshed;

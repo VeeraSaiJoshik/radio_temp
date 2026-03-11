@@ -144,6 +144,7 @@ export interface CopilotDesktopAPI {
   onLiveCommand(callback: (command: LiveCommand) => void): void;
   onLiveEvent(callback: (event: LiveEvent) => void): void;
   onDesktopError(callback: (message: string) => void): void;
+  onWindowModeChange(callback: (payload: { mode: 'orb' | 'bar' }) => void): void;
 }
 
 declare global {

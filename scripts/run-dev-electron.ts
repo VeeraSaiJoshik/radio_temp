@@ -262,7 +262,9 @@ function launchBundle(targetBinary: string): void {
   delete env.ELECTRON_RUN_AS_NODE;
 
   const launchViaOpen =
-    process.platform === 'darwin' && process.env.RADCOPILOT_LAUNCH_OPEN !== '0';
+    process.platform === 'darwin' &&
+    process.env.RADCOPILOT_LAUNCH_OPEN !== '0' &&
+    process.env.NODE_ENV !== 'development';
 
   const child = launchViaOpen
     ? spawn('open', ['-n', '-W', '-a', targetApp, '--args', repoRoot], {

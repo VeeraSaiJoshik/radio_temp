@@ -66,11 +66,6 @@ export function TopBar({ onMicClick, onAskClick, onSimulateClick }: TopBarProps)
         ))}
       </div>
 
-      {/* Centered title */}
-      <div className="absolute left-1/2 -translate-x-1/2 text-xs font-semibold tracking-[0.02em] text-[rgba(244,246,248,0.48)] pointer-events-none whitespace-nowrap">
-        Radiology Copilot
-      </div>
-
       {/* Right-side actions */}
       <div className="app-no-drag flex gap-1 ml-auto relative z-10">
         {state.demoMode && (
