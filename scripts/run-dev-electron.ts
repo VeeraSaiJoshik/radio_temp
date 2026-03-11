@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { spawn, spawnSync } from 'child_process';
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '../..');
 const sourceBinary: string = require('electron') as string;
 const sourceApp = path.resolve(sourceBinary, '..', '..', '..');
 const sourceBinaryName = path.basename(sourceBinary);

@@ -17,7 +17,8 @@
     "prepare:dev-app": "npm run build && node dist/scripts/run-dev-electron.js --prepare-only",
     "reset:permissions": "tccutil reset Microphone com.radiologycopilot.revu.dev; tccutil reset ScreenCapture com.radiologycopilot.revu.dev; tccutil reset Microphone com.radiologycopilot.revu.dev.helper; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.renderer; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.gpu; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.plugin; tccutil reset Microphone com.github.Electron; tccutil reset ScreenCapture com.github.Electron; exit 0",
     "lint:desktop": "tsc --project tsconfig.json --noEmit",
-    "test:desktop": "npm run build && node --test dist/electron/live/*.test.js"
+    "test:desktop": "npm run build && node --test dist/electron/live/*.test.js",
+    "kill": "pkill -f \"ReVU\" && pkill -f \"Electron\""
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

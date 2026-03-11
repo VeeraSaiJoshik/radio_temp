@@ -167,6 +167,12 @@ export default function App() {
         actions.setStatus(message);
       });
 
+      window.copilotDesktop.onWindowModeChange((payload) => {
+        if (cancelled) return;
+        const mode = (payload as { mode?: string })?.mode;
+        if (mode === 'orb' || mode === 'bar') actions.setWindowMode(mode);
+      });
+
       window.copilotDesktop.onLiveEvent((liveEvent) => {
         if (cancelled) return;
         applyLiveEvent(liveEvent);
@@ -299,6 +305,16 @@ export default function App() {
   }, [actions]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
+
+  if (state.windowMode === 'orb') {
+    return (
+      <AppContext.Provider value={{ state, actions }}>
+        <main className="app-drag w-full h-full flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm shadow-lg" />
+        </main>
+      </AppContext.Provider>
+    );
+  }
 
   return (
     <AppContext.Provider value={{ state, actions }}>

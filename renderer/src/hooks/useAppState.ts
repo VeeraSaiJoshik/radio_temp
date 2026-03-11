@@ -6,6 +6,7 @@ import type { Analysis, TranscriptEntry, ScreenshotEntry, BridgeState, LiveState
 // ─── Action Types ─────────────────────────────────────────────────────────────
 
 type Action =
+  | { type: 'SET_WINDOW_MODE'; mode: 'orb' | 'bar' }
   | { type: 'SET_ACTIVE_VIEW'; view: ViewName }
   | { type: 'SET_STATUS'; message: string }
   | { type: 'SET_PERMISSION_WARNING'; message: string }
@@ -64,6 +65,9 @@ function upsertScreenshot(history: ScreenshotEntry[], entry: ScreenshotEntry): S
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'SET_WINDOW_MODE':
+      return { ...state, windowMode: action.mode };
+
     case 'SET_ACTIVE_VIEW':
       return { ...state, activeView: action.view };
 
@@ -193,6 +197,7 @@ function reducer(state: AppState, action: Action): AppState {
 export function useAppState() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  const setWindowMode = useCallback((mode: 'orb' | 'bar') => dispatch({ type: 'SET_WINDOW_MODE', mode }), []);
   const setActiveView = useCallback((view: ViewName) => dispatch({ type: 'SET_ACTIVE_VIEW', view }), []);
   const setStatus = useCallback((message: string) => dispatch({ type: 'SET_STATUS', message }), []);
   const setPermissionWarning = useCallback((message: string) => dispatch({ type: 'SET_PERMISSION_WARNING', message }), []);
@@ -232,6 +237,7 @@ export function useAppState() {
     state,
     dispatch,
     actions: {
+      setWindowMode,
       setActiveView,
       setStatus,
       setPermissionWarning,

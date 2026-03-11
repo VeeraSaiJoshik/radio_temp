@@ -13,6 +13,7 @@ export interface LiveState {
 export interface AppState {
   sessionId: string;
   hotkey: string;
+  windowMode: 'orb' | 'bar';
   activeView: ViewName;
   statusMessage: string;
   permissionWarning: string;
@@ -33,6 +34,7 @@ export interface AppState {
 export const initialState: AppState = {
   sessionId: '',
   hotkey: 'Cmd+Shift+R',
+  windowMode: 'orb',
   activeView: 'Insights',
   statusMessage: 'Ready',
   permissionWarning: '',

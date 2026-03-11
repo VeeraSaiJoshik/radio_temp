@@ -832,8 +832,8 @@ app.whenReady().then(async () => {
   }
 
   configureDisplayMedia();
-  startBridge();
-  await waitForBridge();
+  //startBridge();
+  //await waitForBridge();
   createWindow();
   registerHotkey();
 
