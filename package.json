@@ -5,9 +5,14 @@
   "description": "Electron desktop shell for the Radiology Copilot",
   "main": "dist/electron/main.js",
   "scripts": {
-    "build": "tsc --project tsconfig.json && cp -r electron/renderer/index.html dist/electron/renderer/index.html 2>/dev/null; cp -r electron/renderer/*.css dist/electron/renderer/ 2>/dev/null; cp -r electron/renderer/*.html dist/electron/renderer/ 2>/dev/null; exit 0",
+    "renderer:dev": "cd renderer && npm run dev",
+    "renderer:build": "cd renderer && npm run build",
+    "renderer:install": "cd renderer && npm install",
+    "build": "tsc --project tsconfig.json && npm run renderer:build && cp -r electron/renderer/index.html dist/electron/renderer/index.html 2>/dev/null; cp -r electron/renderer/*.css dist/electron/renderer/ 2>/dev/null; cp -r electron/renderer/*.html dist/electron/renderer/ 2>/dev/null; exit 0",
     "start": "npm run build && node dist/scripts/run-dev-electron.js",
     "start:demo": "npm run build && RADCOPILOT_DEMO=1 node dist/scripts/run-dev-electron.js",
+    "start:vite": "VITE_DEV_SERVER_URL=http://localhost:5173 npm run build && node dist/scripts/run-dev-electron.js",
+    "start:vite:demo": "RADCOPILOT_DEMO=1 VITE_DEV_SERVER_URL=http://localhost:5173 npm run build && node dist/scripts/run-dev-electron.js",
     "start:raw": "npm run build && electron .",
     "prepare:dev-app": "npm run build && node dist/scripts/run-dev-electron.js --prepare-only",
     "reset:permissions": "tccutil reset Microphone com.radiologycopilot.revu.dev; tccutil reset ScreenCapture com.radiologycopilot.revu.dev; tccutil reset Microphone com.radiologycopilot.revu.dev.helper; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.renderer; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.gpu; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.plugin; tccutil reset Microphone com.github.Electron; tccutil reset ScreenCapture com.github.Electron; exit 0",
@@ -22,6 +27,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
-    "electron-liquid-glass": "^1.1.1"
+    "electron-liquid-glass": "^1.1.1",
+    "firebase": "^12.10.0"
   }
 }
