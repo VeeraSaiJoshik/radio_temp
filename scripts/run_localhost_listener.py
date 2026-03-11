@@ -8,6 +8,5 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend.mock_server import run_mock_server
 
-
 if __name__ == "__main__":
     run_mock_server()

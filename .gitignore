@@ -14,3 +14,4 @@ build/
 radcopilot.db
 *.db
 .env
+.claude/
