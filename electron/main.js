@@ -474,7 +474,13 @@ function createWindow() {
     skipTransformProcessType: true
   });
   mainWindow.setWindowButtonVisibility(false);
-  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  // In development, load the Vite dev server; in production, load the built output.
+  const viteDevUrl = process.env.VITE_DEV_SERVER_URL;
+  if (viteDevUrl) {
+    mainWindow.loadURL(viteDevUrl);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'renderer-dist', 'index.html'));
+  }
   mainWindow.once('ready-to-show', () => {
     showWindow();
   });

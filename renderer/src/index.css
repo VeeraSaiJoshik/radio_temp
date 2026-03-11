@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════
+   Liquid Glass Design System — Radiology Copilot
+   Keep the native liquid-glass window as the primary surface.
+   Renderer styling supplements Tailwind for complex/custom rules.
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  --glass-bg: transparent;
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-subtle: rgba(255, 255, 255, 0.07);
+  --glass-fill-soft: rgba(255, 255, 255, 0.045);
+  --glass-fill-strong: rgba(255, 255, 255, 0.08);
+  --pane-shadow: 0 18px 48px rgba(0, 0, 0, 0.16);
+
+  --text-primary: #f4f6f8;
+  --text-secondary: rgba(244, 246, 248, 0.78);
+  --text-muted: rgba(244, 246, 248, 0.48);
+  --font: "Helvetica Neue", -apple-system, system-ui, sans-serif;
+
+  --amber: #ffca94;
+  --amber-text: rgba(255, 212, 168, 0.96);
+  --amber-glow: rgba(255, 188, 96, 0.16);
+  --amber-fill: rgba(255, 188, 96, 0.12);
+
+  --confidence-high: #ff857a;
+  --confidence-medium: #ffd870;
+  --confidence-low: #8be0b3;
+
+  --radius-shell: 22px;
+  --radius-control: 16px;
+  --radius-pill: 999px;
+  --gap: 22px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* -webkit-app-region drag/no-drag */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Animations */
+@keyframes fadeExpandIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes orbPulse {
+  0%, 100% { opacity: 0.38; transform: scale(1); }
+  50% { opacity: 0.66; transform: scale(1.05); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.animate-fade-expand-in {
+  animation: fadeExpandIn 300ms ease forwards;
+}
+
+.animate-view-fade-in {
+  animation: viewFadeIn 200ms ease;
+}
+
+.animate-orb-pulse {
+  animation: orbPulse 3.6s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+/* Textarea focus ring overrides */
+textarea:focus,
+input[type="text"]:focus {
+  outline: none;
+  background: var(--glass-fill-strong);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 202, 148, 0.56),
+    0 0 0 4px var(--amber-glow);
+}
