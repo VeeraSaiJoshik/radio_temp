@@ -3,18 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "description": "Electron desktop shell for the Radiology Copilot",
-  "main": "electron/main.js",
+  "main": "dist/electron/main.js",
   "scripts": {
-    "start": "node scripts/run-dev-electron.js",
-    "start:demo": "RADCOPILOT_DEMO=1 node scripts/run-dev-electron.js",
-    "start:raw": "electron .",
-    "prepare:dev-app": "node scripts/run-dev-electron.js --prepare-only",
+    "build": "tsc --project tsconfig.json && cp -r electron/renderer/index.html dist/electron/renderer/index.html 2>/dev/null; cp -r electron/renderer/*.css dist/electron/renderer/ 2>/dev/null; cp -r electron/renderer/*.html dist/electron/renderer/ 2>/dev/null; exit 0",
+    "start": "npm run build && node dist/scripts/run-dev-electron.js",
+    "start:demo": "npm run build && RADCOPILOT_DEMO=1 node dist/scripts/run-dev-electron.js",
+    "start:raw": "npm run build && electron .",
+    "prepare:dev-app": "npm run build && node dist/scripts/run-dev-electron.js --prepare-only",
     "reset:permissions": "tccutil reset Microphone com.radiologycopilot.revu.dev; tccutil reset ScreenCapture com.radiologycopilot.revu.dev; tccutil reset Microphone com.radiologycopilot.revu.dev.helper; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.renderer; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.gpu; tccutil reset Microphone com.radiologycopilot.revu.dev.helper.plugin; tccutil reset Microphone com.github.Electron; tccutil reset ScreenCapture com.github.Electron; exit 0",
-    "lint:desktop": "node --check electron/main.js && node --check electron/preload.js && node --check electron/live/config.js && node --check electron/live/media_utils.js && node --check electron/live/permissions.js && node --check electron/live/screenshot_transport.js && node --check electron/live/service.js && node --check electron/renderer/live_media.js && node --check electron/renderer/app.js && node --check scripts/run-dev-electron.js",
-    "test:desktop": "node --test electron/live/*.test.js"
+    "lint:desktop": "tsc --project tsconfig.json --noEmit",
+    "test:desktop": "npm run build && node --test dist/electron/live/*.test.js"
   },
   "devDependencies": {
-    "electron": "^36.9.5"
+    "@types/node": "^25.4.0",
+    "electron": "^36.9.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
