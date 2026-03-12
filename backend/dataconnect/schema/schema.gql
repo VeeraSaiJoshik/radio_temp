@@ -1,0 +1,76 @@
+# schema.gql — Firebase Data Connect
+
+enum Sex {
+  M
+  F
+  Other
+}
+
+enum SmokingStatus {
+  never
+  former
+  current
+}
+
+type PatientContext @table {
+  id: UUID! @default(expr: "uuidV4()")
+
+  # Identity
+  patientId: String
+  age: Int
+  sex: Sex
+  weightKg: Float
+  heightCm: Float
+
+  # Scan metadata
+  scanDate: String
+  orderingPhysician: String
+  modalityHint: String
+  scanReason: String
+
+  # Symptoms
+  chiefComplaint: String
+  symptomDurationDays: Int
+
+  # Medical history
+  smokingStatus: SmokingStatus
+
+  # Prior imaging / labs
+  priorImagingSummary: String
+  relevantLabs: Any
+
+  # Urgency / flags
+  isEmergency: Boolean! @default(expr: "false")
+  rawOcrText: String
+}
+
+# List[str] fields → join tables
+type PatientSymptom @table {
+  id: UUID! @default(expr: "uuidV4()")
+  patient: PatientContext!
+  symptom: String!
+}
+
+type PatientHistory @table {
+  id: UUID! @default(expr: "uuidV4()")
+  patient: PatientContext!
+  condition: String!
+}
+
+type PatientFamilyHistory @table {
+  id: UUID! @default(expr: "uuidV4()")
+  patient: PatientContext!
+  condition: String!
+}
+
+type PatientMedication @table {
+  id: UUID! @default(expr: "uuidV4()")
+  patient: PatientContext!
+  medication: String!
+}
+
+type PatientAllergy @table {
+  id: UUID! @default(expr: "uuidV4()")
+  patient: PatientContext!
+  allergy: String!
+}

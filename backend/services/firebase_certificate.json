@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "radiology-assistant-912c4",
+  "private_key_id": "6fe963a575234ff68615d57e662d8b0545e297af",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5LB3FHCIXLTL3\n2DH4CYCYBTm7YyJFznAruEPqpN9vg8okU8gK6qUyYGGC2/7XYHsoNHOCMIt7oaVS\nnM+42rK2J52otVhdoQKDEdAVsEcMRMhcZTWMao2+UqBdHELuSqgFWqfCD/S8Rt3N\n+Lh9Bw0Oe/wE61VUz05H6RMMCy357yUqMnVwRecOcFKSOZuWC+6c/TG81x6toUeU\n5YkAmIOvR2njY/9Uu/muPBcXULKzv4kCRfGzvXEsmODtl/mnQFyoCBXHYBoElhS2\n5VLAm1ffrSyP9j0DrEx8Ykp8S8/i/eXWUa2+SDO3konlfkRdutrFBzgal2GD+CCj\n+SYAoJKDAgMBAAECggEARnZ5q5h9hnk+JF7iAONIylBuvBZIo+ye9ZwMSB1OIuax\nBKrW/AR3MVjIsl2Zt4ZwxwdSjw9+/GAyA2JFjy+1gqhHj7vWMObEiHC+UIqANrRz\n0+j1fAXOA0b43AWVmIzTLBpnrOqadAy5eZf0SCtnNgRLDeopUfkC7k1MYLBeYfUO\nVQF6LkD2dDM6Zi3Ieq4aiWnJuU8jPwDyKhPgsNS+70KCybSP6rmBfc/fDEQVP4K4\n0FXeXfzUlAOOtlsO324/Do/kS1JniKxBfz+qJ7T2jJP9YSsVVOTfr3TzaeRsa4C+\nSS6E7poh9MLiXHMzERtI1xYoTMA2c9vQMGRXB38LiQKBgQD0BinzSjVyb1/B+E6U\ncnS2X4lqs5ZIZEUdOmwRK9APh4RRiGJ/rWFDEpp6kYIamsabKYprMphLfSM1PmpU\nLipel636/7gyT9DZUyk4lrBZxDetC60CjnnHYY22RcgGD6kZpjfg8TNIZNm0BjPt\na8NRLU62c7tq5L2R+Nqhsr6eyQKBgQDCQo8VfRYj705qx6XdN1MmCNGoLYRGKTUQ\nORTIoxmP2IUg4jn3b561R8vf+Whl9LngZ1c2FoSVJFfzTkwV7H82HodgN44r7Z8e\n2NV/2kdl1QNmd8iJu0AdjkmUGLTH/nGRch0NjEV5KMJhgHwqwAh8ZzO4sJxwnQ9e\n8sPmrtZQ6wKBgQDYrOBy9mGeyuXsBd9AUKDxjsMly3CVtvLnkQiD9rM4FsyW2NMd\nK4ZBWDNyweEUXnobLDeMF9DCtsqcbF9df+B/PY9uX8HeaqC3V/AyHxtXmbMWJFfq\n/TeEokqCnlONjjpIXB8hzQoMLgBgqWFSX21+lwxdVUYFFDZ/dsgq69v2gQKBgQC5\nAAQd9dM5A7UNcfbe1spj5XAtFrPq0WGMgp/td45ndE9MgsWrhGyDvc1GDtLCji7a\nq+/dPdKj6kmsF3vUQTbhBm/sTNwjr5ejG+MvcGQgcZ1cX2Tm7iHgQ9qEpIa+E+56\nEk/i0Bx1h0Ce9GrLl7g9KVeTYvaJNLontVClhwnpYwKBgGYk/rkWdZqkE+Hz06EL\npSP7Ew1rokI2nNNzAOjAy2A669PeW8YAkri2fLm6sW8/JlRMACiV4peworx3gHAJ\n3ZfDTtjbnrOltql31XhU9YrhIXfph02Xif48JOhPKWU6Dv4twKhlZb/lrFH2Hhot\nKNmFgcw4Rnmqna7kB5ToJh3H\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@radiology-assistant-912c4.iam.gserviceaccount.com",
+  "client_id": "107532453456343003011",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40radiology-assistant-912c4.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

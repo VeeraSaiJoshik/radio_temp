@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from models import BoundingBox
 from dotenv import load_dotenv
 import services.image_processor as img_processor
-import 
 
 load_dotenv()
 
