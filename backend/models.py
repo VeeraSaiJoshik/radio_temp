@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 import numpy as np
 
 class BoundingBox(BaseModel):
@@ -7,20 +8,23 @@ class BoundingBox(BaseModel):
     width: int
     height: int
 
+class ImageInfo(BaseModel):
+    patient_name: Optional[str] = None
+    mrn: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    scan_type: Optional[str] = None
+    scan_date: Optional[str] = None
+    body_part: Optional[str] = None
+    accession_number: Optional[str] = None
+    additional_info: Optional[str] = None
+
+class CropResult(BaseModel):
+    bounding_box: BoundingBox
+    image_info: ImageInfo
+
 class ImageEmbedding(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     image_id: str
     image_embedding: np.ndarray | None
     kp: int
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ImageEmbedding):
-            return False
-        if self.image_id != other.image_id or self.kp != other.kp:
-            return False
-        if self.image_embedding is None and other.image_embedding is None:
-            return True
-        if self.image_embedding is None or other.image_embedding is None:
-            return False
-        return np.array_equal(self.image_embedding, other.image_embedding)
