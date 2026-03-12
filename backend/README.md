@@ -1,0 +1,1 @@
+Running a test: pytest test_iamge_processor.py -v -s
