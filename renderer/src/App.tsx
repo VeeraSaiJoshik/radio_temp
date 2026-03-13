@@ -5,7 +5,7 @@ import { TopBar } from './components/TopBar';
 import { ContentPanel } from './components/ContentPanel';
 import { InputBar } from './components/InputBar';
 import type { LiveEvent, ILiveMediaController } from './types/electron';
-import type { InputMode } from './store/appState';
+//import type { InputMode } from './store/appState';
 
 export default function App() {
   const { state, actions } = useAppState();
@@ -318,18 +318,18 @@ export default function App() {
     if (input) input.focus();
   }, []);
 
-  const handleSend = useCallback(async (text: string, mode: InputMode) => {
-    if (mode === 'transcript') {
-      try {
-        await window.copilotDesktop.sendLiveText(text);
-        actions.setActiveView('Transcript');
-      } catch (error: unknown) {
-        actions.appendTranscript('system', (error as Error).message);
-      }
-    } else {
-      actions.setDoctorDraft(text);
-    }
-  }, [actions]);
+  // const handleSend = useCallback(async (text: string, mode: InputMode) => {
+  //   if (mode === 'transcript') {
+  //     try {
+  //       await window.copilotDesktop.sendLiveText(text);
+  //       actions.setActiveView('Transcript');
+  //     } catch (error: unknown) {
+  //       actions.appendTranscript('system', (error as Error).message);
+  //     }
+  //   } else {
+  //     actions.setDoctorDraft(text);
+  //   }
+  // }, [actions]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -360,7 +360,7 @@ export default function App() {
             onSimulateClick={handleSimulate}
           />
           <ContentPanel onCapture={handleCapture} />
-          <InputBar onSend={handleSend} />
+          <InputBar/>
         </div>
       </main>
     </AppContext.Provider>

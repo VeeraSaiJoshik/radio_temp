@@ -1,8 +1,8 @@
 from datetime import datetime
-
+from __future__ import annotations
 import cv2
 from pydantic import BaseModel, Field, field_validator, model_serializer
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Optional, Literal, Union
 import ast
 import numpy as np
 
@@ -177,4 +177,48 @@ class CropResult(BaseModel):
 class DiagnosisResult(BaseModel):
     pass
 
-ORCHESTRATOR_ADDRESS = "http://localhost:8080/register"
+ORCHESTRATOR_ADDRESS = "http://localhost:8080/register"                                                                                                                                                       
+class Circle(BaseModel):                                                                                                                                                         
+    x: float    
+    y: float
+    radius: float
+    color: str
+
+                                                                                                                                                                                
+class Rectangle(BaseModel):
+    x: float                                                                                                                                                                     
+    y: float    
+    width: float
+    height: float
+    color: str
+                                                                                                                                                                                
+                                                                                                                                                                                
+class Annotation(BaseModel):                                                                                                                                                     
+    name: str                                                                                                                                                                    
+    description: str
+    number: int
+    annotations: list[Union[Rectangle, Circle]]
+    confidence: str                                                                                                                                                              
+                                                                                                                                                                                
+                                                                                                                                                                                
+class MedicalModel(BaseModel):                                                                                                                                                   
+    name: str                                                                                                                                                                    
+    provider: str
+    type: str
+    description: str
+
+
+class ModelNode(BaseModel):
+    status: Literal["pending", "positive", "negative", "in-progress"]
+    children: list[ModelNode]                                                                                                                                                    
+    model: MedicalModel                                                                                                                                                          
+                                                                                                                                                                                
+                                                                                                                                                                                
+ModelNode.model_rebuild()  # required for self-referential model                                                                                                                 
+                                                                                                                                                                                
+                
+class DiagnosisState(BaseModel):
+    progress_tree: ModelNode
+    percent_completion: float                                                                                                                                                    
+    annotations: list[Annotation]                                                                                                                                                
+    overall_diagnosis_context: str

@@ -75,10 +75,7 @@ export interface RendererCommandResult {
 
 export interface ScreenshotToolResult {
   status: string;
-  request_id: string | null;
-  image_hash: string | null;
-  sent_at: string | null;
-  backend_status: string;
+  image_id: string | null;
   error: string | null;
 }
 
@@ -158,7 +155,6 @@ export class ElectronLiveService {
   closeOverlayTrigger: () => Promise<unknown>;
   rendererRequest: (command: RendererCommand) => Promise<RendererCommandResult>;
   aiClient: { live: { connect: (options: unknown) => Promise<LiveSession> } } | null;
-  screenshotTransport: LiveScreenshotTransportLike;
 
   _state: ServiceState;
   _stopRequested: boolean;
@@ -204,14 +200,6 @@ export class ElectronLiveService {
       options.aiClient !== undefined
         ? options.aiClient
         : (genAi as unknown as typeof this.aiClient);
-    this.screenshotTransport =
-      options.screenshotTransport ||
-      new LiveScreenshotTransport({
-        url: this.runtimeConfig.screenshotWsUrl,
-        ackTimeoutMs: this.runtimeConfig.screenshotAckTimeoutMs,
-        retryDelayMs: this.runtimeConfig.screenshotRetryDelayMs,
-        onStatus: (message: string) => this._emitSystemMessage(message)
-      });
 
     this._state = {
       enabled: this.runtimeConfig.enabled,
@@ -258,7 +246,6 @@ export class ElectronLiveService {
       return;
     }
 
-    await this.screenshotTransport.start();
     this._stopRequested = false;
     this._connectLoopPromise = this._runConnectLoop();
   }
@@ -281,7 +268,6 @@ export class ElectronLiveService {
       this._connectLoopPromise = null;
     }
 
-    await this.screenshotTransport.close();
     this._emitConnection(false, 'Gemini Live disconnected');
   }
 
@@ -784,27 +770,34 @@ export class ElectronLiveService {
     };
 
     try {
-      const ack = await this.screenshotTransport.sendCapture(payload);
+      const ack = await fetch("http://localhost:8000/get_image_id", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image_hash: {
+            "image_base64": payload.image_b64,
+          }
+        })
+      });
+
+      const data = await ack.json()
+
       const activeToolCall = this._activeToolCalls.get(functionCallId);
       if (activeToolCall && activeToolCall.cancelled) {
         return {
           status: 'error',
-          request_id: requestId,
-          image_hash: imageHash,
-          sent_at: sentAt,
-          backend_status: 'cancelled',
+          image_id: requestId,
           error: 'Tool call was cancelled before completion'
         };
       }
 
-      if (ack.status !== 'ok') {
+      if (!ack.ok) {
         const failedResult: ScreenshotToolResult = {
           status: 'error',
-          request_id: requestId,
-          image_hash: imageHash,
-          sent_at: sentAt,
-          backend_status: String(ack.status || 'error'),
-          error: ack.error || 'Local backend returned an error ack'
+          image_id: requestId,
+          error: String(ack.body) || 'Local backend returned an error ack'
         };
         this._upsertScreenshot({
           ...pendingEvent,
@@ -815,10 +808,7 @@ export class ElectronLiveService {
 
       const result: ScreenshotToolResult = {
         status: 'ok',
-        request_id: requestId,
-        image_hash: imageHash,
-        sent_at: sentAt,
-        backend_status: 'ok',
+        image_id: requestId,
         error: null
       };
       this._upsertScreenshot({

@@ -16,7 +16,7 @@ class GetImageIDInput(BaseModel):
 
 router = APIRouter()
 
-@router.get("/get_image_id")
+@router.post("/get_image_id")
 def get_image_id(input: GetImageIDInput):
     input_image = img_processor.base64_to_image(input.image_base64)
     crop_image_data: CropResult | bool = smart_crop_image(input.image_base64)
