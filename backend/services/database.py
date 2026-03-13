@@ -20,6 +20,18 @@ class FirebaseDatabase:
     def set_rl_data(self, path, data: DBRecord):
         dir = self.db.child(path + "/" + data.id)
         dir.set(data.model_dump(mode="json"))
+    
+    def get_user_id_by_first_name(self, first_name, last_name) -> str | None:
+        print("I started")
+        users_ref = self.fb.collection("users")
+        data = users_ref.stream()
+
+        for doc in data:
+            data =  PatientContext.model_validate(doc.to_dict())
+            if data.patient_first_name.lower() == first_name.lower() and data.patient_last_name.lower() == last_name.lower(): 
+                return data.id
+
+        return ""
 
     def update_data(self, path, data):
         self.db.child(path).update(data)
@@ -35,7 +47,7 @@ class FirebaseDatabase:
                 image = ImageDataDB.model_validate(data)
 
                 with open("./cache.txt", "a") as f:
-                    f.write(f"{image.id}:{image.image_features}\n")
+                    f.write(f"{image.id}|{image.user_id}|{image.image_features}\n")
 
         open("./cache.txt", "w+")
 
@@ -47,6 +59,8 @@ if __name__ == "__main__":
     john_smith = PatientContext(
         id="rec_001",
         patient_id="MRN-20481",
+        patient_first_name="John",
+        patient_last_name="Smith",
         age=45,
         sex="M",
         weight_kg=82.5,
@@ -85,3 +99,6 @@ if __name__ == "__main__":
     )
     
     firebase_db.set_rl_data("patients", john_smith)
+
+    firebase_db = FirebaseDatabase()
+    firebase_db.get_user_id_by_first_name("asdfasdf")

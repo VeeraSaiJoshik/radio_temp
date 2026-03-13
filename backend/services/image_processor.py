@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import base64
 
-from models import BoundingBox, ImageEmbedding
+from models import BoundingBox, ImageDataDB, ImageEmbedding
 
 def are_images_similar(
     des1: ImageEmbedding, 
@@ -84,6 +84,11 @@ def make_image(seed: int, noise: float = 0.0) -> np.ndarray:
         img = cv2.add(img, noise_arr)
     return img
 
+def query_image_id(image: ImageEmbedding) -> str | False:
+    return False
+
+def send_image_to_orchestrator(image_information: ImageDataDB):
+    pass
 
 if __name__ == "__main__":
     test_images = [

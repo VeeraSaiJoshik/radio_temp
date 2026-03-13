@@ -2,16 +2,16 @@ from dotenv import load_dotenv
 from services.image_processor import base64_to_image
 import google.generativeai as genai
 import PIL.Image as Image
-from models import BoundingBox, ImageInfo, CropResult
+from models import BoundingBox, ImageInfo, CropResult, ImageDataDB
 import cv2
 import os
-
+import json
 from services.testing_utils import image_path_to_base64
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-client = genai.GenerativeModel("gemini-2.5-flash")
+client = genai.GenerativeModel("gemini-2.5-pro")
 
 def smart_crop_image(image: str) -> CropResult | bool:
     img: cv2.Mat = base64_to_image(image)
@@ -38,15 +38,17 @@ def smart_crop_image(image: str) -> CropResult | bool:
     prompt = (
         "You are analyzing a screenshot of a PACS medical imaging viewer. "
         "Extract any visible patient and scan information from the UI (e.g. overlays, sidebars, headers). "
-        "Return a JSON object with these fields (use null if not visible): "
-        "patient_name, mrn, date_of_birth, scan_type, scan_date, body_part, accession_number, additional_info. "
-        "Return ONLY the JSON object, no explanation."
+        f"Extract the following information and return it as a JSON object in this format : {json.dumps(ImageDataDB.model_json_schema(), indent = 2)}"
+        "Remember, in this software, there will be multiple names and meta data of multiple images on the side bar as a way for the doctor to navigate. You should only extract the patient and scan information that is currently pulled up. I.E pull the meta data information that is lcoated towards the center of the screen, in the window where the medical image annotation is taking place"
     )
+    
     response = client.generate_content(
         [prompt, pil_image],
         generation_config=genai.GenerationConfig(response_mime_type="application/json"),
     )
-    image_info = ImageInfo.model_validate_json(response.text)
+    print(response.text)
+    image_info = ImageDataDB.model_validate_json(response.text)
+    print(image_info)
 
     cropped = img[y:y + h, x:x + w]
     cv2.imshow("Cropped Image", cropped)
