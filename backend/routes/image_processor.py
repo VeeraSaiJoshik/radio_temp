@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 import cv2
 from pydantic import BaseModel
-from models import ORCHESTRATOR_ADDRESS, ImageStatus, CropResult, OrchestratorInput
+from models import ORCHESTRATOR_ADDRESS, DiagnosisState, ImageStatus, CropResult, MedicalModel, ModelNode, OrchestratorInput
 from dotenv import load_dotenv
 from services.database import FirebaseDatabase
 from services.gemini_cropper import smart_crop_image
@@ -39,9 +39,20 @@ def get_image_id(input: GetImageIDInput):
 
     if image_id is False:
         firebase_database.set_rl_data("images", crop_image_data.image_info)
-        firebase_database.set_rl_data("orchestrator-status", ImageStatus(
+        firebase_database.set_rl_data("diagnosis", DiagnosisState(
+            id=crop_image_data.image_info.id,
             image_id=crop_image_data.image_info.id,
-            percent_complete=0.0
+            progress_tree=ModelNode(
+                status="in-progress",
+                children=[],
+                model=MedicalModel(
+                    name="Orchestrator",
+                    description="Identifies which potential models to run based on doctors diagnosis",
+                    provider="Stanford AI Lab", 
+                )
+            ),
+            percent_completion=0.0,
+            annotations=[]
         ))
 
         post(ORCHESTRATOR_ADDRESS, json=OrchestratorInput(

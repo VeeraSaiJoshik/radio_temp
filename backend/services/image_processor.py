@@ -1,3 +1,5 @@
+import ast
+import json
 import random
 import string
 import sys
@@ -84,11 +86,41 @@ def make_image(seed: int, noise: float = 0.0) -> np.ndarray:
         img = cv2.add(img, noise_arr)
     return img
 
-def query_image_id(image: ImageEmbedding) -> str | False:
-    return False
+def query_image_id(image: ImageEmbedding) -> str | bool:
+    cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache.txt")
 
-def send_image_to_orchestrator(image_information: ImageDataDB):
-    pass
+    if not os.path.exists(cache_path):
+        return False
+
+    with open(cache_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            parts = line.split("|", 2)
+            if len(parts) != 3:
+                continue
+
+            image_id, _, features_str = parts
+
+            try:
+                features_dict = json.loads(features_str)
+            except (json.JSONDecodeError, ValueError):
+                try:
+                    features_dict = ast.literal_eval(features_str)
+                except (ValueError, SyntaxError):
+                    continue
+
+            try:
+                cached_embedding = ImageEmbedding.model_validate(features_dict)
+            except Exception:
+                continue
+
+            if are_images_similar(image, cached_embedding):
+                return image_id
+
+    return False
 
 if __name__ == "__main__":
     test_images = [

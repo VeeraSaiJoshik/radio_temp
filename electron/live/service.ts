@@ -20,6 +20,7 @@ import {
   ScreenshotCapturePayload,
   ScreenshotAckPayload
 } from './screenshot_transport';
+import { DiagnosisState } from '../models/diagnosis_state';
 
 // ─── Public types ────────────────────────────────────────────────────────────
 
@@ -52,6 +53,8 @@ export interface ServiceState {
   live: LiveConnectionState;
   transcript_entries: TranscriptEntry[];
   screenshot_history: ScreenshotHistoryEntry[];
+  diagnosis_results: DiagnosisState[];
+  monitoring_tabs: string[];
 }
 
 export interface LiveEvent {
@@ -76,7 +79,7 @@ export interface RendererCommandResult {
 export interface ScreenshotToolResult {
   status: string;
   image_id: string | null;
-  error: string | null;
+  description: string;
 }
 
 export interface ToolCallResult {
@@ -142,7 +145,9 @@ export function cloneState(state: ServiceState): ServiceState {
     transcript_entries: state.transcript_entries.map((entry) => ({ ...entry })),
     screenshot_history: state.screenshot_history.map((entry) => ({ ...entry })),
     session_id: state.session_id || '',
-    enabled: state.enabled
+    enabled: state.enabled,
+    diagnosis_results: [],
+    monitoring_tabs: []
   };
 }
 
@@ -211,7 +216,9 @@ export class ElectronLiveService {
         mic_active: false
       },
       transcript_entries: [],
-      screenshot_history: []
+      screenshot_history: [],
+      diagnosis_results: [], 
+      monitoring_tabs: []
     };
 
     this._stopRequested = false;
@@ -683,10 +690,7 @@ export class ElectronLiveService {
       } else {
         result = {
           status: 'error',
-          request_id: null,
-          image_hash: null,
-          sent_at: null,
-          backend_status: 'unsupported_tool',
+          image_id: null,
           error: `Unsupported tool: ${functionName}`
         };
       }
@@ -757,17 +761,6 @@ export class ElectronLiveService {
     };
     this._upsertScreenshot(pendingEvent);
 
-    const payload: ScreenshotCapturePayload = {
-      type: 'screenshot.capture',
-      request_id: requestId,
-      session_id: this._state.session_id || '',
-      timestamp: sentAt,
-      reason,
-      mime_type: (capture.mime_type as string) || 'image/jpeg',
-      image_b64: imageBase64,
-      image_hash: imageHash,
-      source: 'gemini_live_tool'
-    };
 
     try {
       const ack = await fetch("http://localhost:8000/get_image_id", {
@@ -777,7 +770,7 @@ export class ElectronLiveService {
         },
         body: JSON.stringify({
           image_hash: {
-            "image_base64": payload.image_b64,
+            "image_base64": imageBase64,
           }
         })
       });
@@ -789,7 +782,7 @@ export class ElectronLiveService {
         return {
           status: 'error',
           image_id: requestId,
-          error: 'Tool call was cancelled before completion'
+          description: 'Tool call was cancelled before completion'
         };
       }
 
@@ -797,7 +790,7 @@ export class ElectronLiveService {
         const failedResult: ScreenshotToolResult = {
           status: 'error',
           image_id: requestId,
-          error: String(ack.body) || 'Local backend returned an error ack'
+          description: String(ack.body) || 'Local backend returned an error ack'
         };
         this._upsertScreenshot({
           ...pendingEvent,
@@ -806,10 +799,34 @@ export class ElectronLiveService {
         return failedResult;
       }
 
+      const image_id = (data as {pass: string, status: string, image_id: string}).image_id;
+      if(this._state.monitoring_tabs.includes(image_id)) {
+        return {
+          status: 'ok',
+          image_id: requestId,
+          description: 'This image id already exists in our local _state, use your tools in order to navigate the UI to this tab because it already exists'
+        };
+      }
+
+      if (image_id) {
+        const diagnosisResponse = await fetch(`http://localhost:8000/database/diagnosis/${image_id}`);
+        if (diagnosisResponse.ok) {
+          const diagnosisData = await diagnosisResponse.json();
+          const diagnosisState: DiagnosisState = {
+            diagnosis_id: diagnosisData.image_id,
+            progress_tree: diagnosisData.progress_tree,
+            percent_completion: diagnosisData.percent_completion,
+            annotations: diagnosisData.annotations,
+            overall_diagnosis_context: diagnosisData.overall_diagnosis_context
+          };
+          this._state.diagnosis_results.push(diagnosisState);
+        }
+      }
+
       const result: ScreenshotToolResult = {
         status: 'ok',
         image_id: requestId,
-        error: null
+        description: 'Screenshot captured and acknowledged by local backend'
       };
       this._upsertScreenshot({
         ...pendingEvent,
@@ -875,10 +892,7 @@ export class ElectronLiveService {
   ): ScreenshotToolResult {
     return {
       status: 'error',
-      request_id: requestId,
-      image_hash: imageHash,
-      sent_at: sentAt,
-      backend_status: this._classifyScreenshotError(error),
+      image_id: requestId,
       error: error && error.message ? error.message : String(error)
     };
   }

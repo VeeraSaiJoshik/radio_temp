@@ -6,6 +6,7 @@ from models import BoundingBox, ImageInfo, CropResult, ImageDataDB
 import cv2
 import os
 import json
+import uuid
 from services.testing_utils import image_path_to_base64
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -47,7 +48,10 @@ def smart_crop_image(image: str) -> CropResult | bool:
         generation_config=genai.GenerationConfig(response_mime_type="application/json"),
     )
     print(response.text)
-    image_info = ImageDataDB.model_validate_json(response.text)
+    parsed = json.loads(response.text)
+    if not parsed.get("id"):
+        parsed["id"] = str(uuid.uuid4())
+    image_info = ImageDataDB.model_validate(parsed)
     print(image_info)
 
     cropped = img[y:y + h, x:x + w]

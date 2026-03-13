@@ -27,11 +27,14 @@ class FirebaseDatabase:
         data = users_ref.stream()
 
         for doc in data:
-            data =  PatientContext.model_validate(doc.to_dict())
-            if data.patient_first_name.lower() == first_name.lower() and data.patient_last_name.lower() == last_name.lower(): 
+            data = PatientContext.model_validate({**doc.to_dict(), "id": doc.id})
+            if data.patient_first_name.lower() == first_name.lower() and data.patient_last_name.lower() == last_name.lower():
                 return data.id
 
         return ""
+
+    def get_rl_data(self, path) -> dict | None:
+        return self.db.child(path).get()
 
     def update_data(self, path, data):
         self.db.child(path).update(data)
@@ -101,4 +104,4 @@ if __name__ == "__main__":
     firebase_db.set_rl_data("patients", john_smith)
 
     firebase_db = FirebaseDatabase()
-    firebase_db.get_user_id_by_first_name("asdfasdf")
+    firebase_db.get_user_id_by_first_name("asdfasdf", "asdfasdf")

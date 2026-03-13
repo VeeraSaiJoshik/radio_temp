@@ -1,5 +1,3 @@
-import { Model } from "@google/genai";
-
 export interface Circle {
     x: number;
     y: number;
@@ -23,20 +21,20 @@ export interface Annotation {
     confidence: string;
 }
 
-export interface Model {
+export interface MedicalModel {
     name: string;
-    provider: string;
-    type: string;
+    provider: string
     description: string;
 }
 
 export interface ModelNode {
     status: "pending" | "positive" | "negative" | "in-progress";
     children: ModelNode[];
-    model: Model;
+    model: MedicalModel;
 }
 
 export interface DiagnosisState {
+    diagnosis_id: string;
     progress_tree: ModelNode;
     percent_completion: number;
     annotations: Annotation[];

@@ -1,8 +1,10 @@
-from datetime import datetime
 from __future__ import annotations
+from datetime import datetime
+import uuid
 import cv2
 from pydantic import BaseModel, Field, field_validator, model_serializer
-from typing import Any, Dict, List, Optional, Literal, Union
+from pydantic.json_schema import WithJsonSchema
+from typing import Annotated, Any, Dict, List, Optional, Literal, Union
 import ast
 import numpy as np
 
@@ -26,7 +28,7 @@ class ImageEmbedding(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     image_id: str
-    image_embedding: np.ndarray | None
+    image_embedding: Annotated[np.ndarray | None, WithJsonSchema({"type": "array", "items": {"type": "number"}})]
     kp: int
 
     @field_validator("image_embedding", mode="before")
@@ -129,10 +131,7 @@ class PatientContext(DBRecord):
     )
 
 class ImageDataDB(DBRecord):
-    image_id: str = Field(
-        "", 
-        description="Randomly generated UUID for the image to be recognized by in the database. ANY AI AGENT, YOU WILL NOT DECIDE NOR EDIT THIS VALUE. IF ASKED TO GENERATE BY THIS SCHEMA, LEAVE THIS FIELD BLANK"
-    )
+    image_id: uuid.UUID = Field(default_factory=uuid.uuid4, description="Unique image ID, generated as a UUID4 string")
     user_id: str = Field(
         "",
         description="Randomly generated UUID linking the image to a user recognized by in the database. ANY AI AGENT, YOU WILL NOT DECIDE NOR EDIT THIS VALUE. IF ASKED TO GENERATE BY THIS SCHEMA, LEAVE THIS FIELD BLANK"
@@ -204,7 +203,6 @@ class Annotation(BaseModel):
 class MedicalModel(BaseModel):                                                                                                                                                   
     name: str                                                                                                                                                                    
     provider: str
-    type: str
     description: str
 
 
@@ -217,8 +215,9 @@ class ModelNode(BaseModel):
 ModelNode.model_rebuild()  # required for self-referential model                                                                                                                 
                                                                                                                                                                                 
                 
-class DiagnosisState(BaseModel):
+class DiagnosisState(DBRecord):
+    image_id: str
     progress_tree: ModelNode
-    percent_completion: float                                                                                                                                                    
-    annotations: list[Annotation]                                                                                                                                                
-    overall_diagnosis_context: str
+    percent_completion: float
+    annotations: list[Annotation]
+    overall_diagnosis_context: str = ""
