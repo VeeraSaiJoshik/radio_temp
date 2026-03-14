@@ -1,0 +1,17 @@
+{
+  "model_name": "Tuberculosis ViT Classifier",
+  "version": "1.0.0",
+  "author": "sukhmani1303",
+  "description": "Vision Transformer for tuberculosis detection in chest X-rays",
+  "tags": [
+    "medical",
+    "chest-xray",
+    "tuberculosis",
+    "vision-transformer",
+    "pytorch"
+  ],
+  "license": "apache-2.0",
+  "framework": "pytorch",
+  "model_size_mb": 149.27088356018066,
+  "created_date": "2025-06-08"
+}

@@ -818,22 +818,7 @@ export class ElectronLiveService {
       }
 
       if (image_id) {
-        const [diagnosisResponse, rawImageResponse] = await Promise.all([
-          fetch(`http://localhost:8000/database/diagnosis/${image_id}`),
-          fetch(`http://localhost:8000/database/raw_image/${image_id}`)
-        ]);
-
-        if (diagnosisResponse.ok) {
-          const diagnosisData = await diagnosisResponse.json();
-          const diagnosisState: DiagnosisState = {
-            diagnosis_id: diagnosisData.image_id,
-            progress_tree: diagnosisData.progress_tree,
-            percent_completion: diagnosisData.percent_completion,
-            annotations: diagnosisData.annotations,
-            overall_diagnosis_context: diagnosisData.overall_diagnosis_context
-          };
-          this._state.diagnosis_results.push(diagnosisState);
-        }
+        const rawImageResponse = await fetch(`http://localhost:8000/database/raw_image/${image_id}`);
 
         if (rawImageResponse.ok) {
           const rawImageData = await rawImageResponse.json();
@@ -848,6 +833,7 @@ export class ElectronLiveService {
           this._state.monitoring_tabs.push(image_id);
         }
         this._emitDiagnosisUpdate();
+        void this._pollDiagnosis(image_id);
       }
 
       const result: ScreenshotToolResult = {
@@ -908,6 +894,51 @@ export class ElectronLiveService {
       const message = err && err.message ? err.message : String(err);
       this._emitSystemMessage(`[live] Overlay close failed: ${message}`);
       return { status: 'error', reason, error: message };
+    }
+  }
+
+  private async _pollDiagnosis(image_id: string): Promise<void> {
+    const maxAttempts = 10;
+    const intervalMs = 2000;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const response = await fetch(`http://localhost:8000/database/diagnosis/${image_id}`);
+        if (response.ok) {
+          const data = await response.json() as {
+            image_id: string;
+            progress_tree: DiagnosisState['progress_tree'];
+            percent_completion: number;
+            annotations: DiagnosisState['annotations'];
+            overall_diagnosis_context: string;
+          };
+
+          const diagnosisState: DiagnosisState = {
+            diagnosis_id: data.image_id,
+            progress_tree: data.progress_tree,
+            percent_completion: data.percent_completion,
+            annotations: data.annotations,
+            overall_diagnosis_context: data.overall_diagnosis_context
+          };
+
+          const idx = this._state.diagnosis_results.findIndex(
+            d => d.diagnosis_id === image_id
+          );
+          if (idx === -1) {
+            this._state.diagnosis_results.push(diagnosisState);
+          } else {
+            this._state.diagnosis_results[idx] = diagnosisState;
+          }
+
+          this.eventSink({ type: 'live.diagnosis', diagnosis: diagnosisState });
+
+          if (data.percent_completion >= 1.0) break;
+        }
+      } catch {
+        // retry on next interval
+      }
+
+      await new Promise<void>(r => setTimeout(r, intervalMs));
     }
   }
 

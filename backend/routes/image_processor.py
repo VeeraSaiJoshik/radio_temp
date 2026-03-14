@@ -84,7 +84,7 @@ def get_image_id(input: GetImageIDInput):
         return {
             "pass": True,
             "status": "Image has not been cached before, evaluating image now",
-            "image_id": ""
+            "image_id": crop_image_data.image_info.id
         }
     else : 
         return {

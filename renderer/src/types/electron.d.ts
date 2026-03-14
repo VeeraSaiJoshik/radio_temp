@@ -42,6 +42,7 @@ export interface LiveEvent {
   is_final?: boolean;
   data?: string;
   event?: ScreenshotEntry;
+  diagnosis?: DiagnosisState;
 }
 
 export interface LiveState {
@@ -53,6 +54,7 @@ export interface LiveState {
   };
   transcript_entries: TranscriptEntry[];
   screenshot_history: ScreenshotEntry[];
+  diagnosis_results: DiagnosisState[];
   session_id: string;
   enabled: boolean;
 }
@@ -77,6 +79,34 @@ export interface Analysis {
 export interface TranscriptEntry {
   role: 'user' | 'assistant' | 'system';
   text: string;
+}
+
+export interface MedicalModel {
+  name: string;
+  provider: string;
+  description: string;
+}
+
+export interface ModelNode {
+  status: 'pending' | 'positive' | 'negative' | 'in-progress';
+  children: ModelNode[];
+  model: MedicalModel;
+}
+
+export interface DiagnosisAnnotation {
+  name: string;
+  description: string;
+  number: number;
+  annotations: Array<{ x: number; y: number; width?: number; height?: number; radius?: number; color: string }>;
+  confidence: string;
+}
+
+export interface DiagnosisState {
+  diagnosis_id: string;
+  progress_tree: ModelNode;
+  percent_completion: number;
+  annotations: DiagnosisAnnotation[];
+  overall_diagnosis_context: string;
 }
 
 export interface ScreenshotEntry {

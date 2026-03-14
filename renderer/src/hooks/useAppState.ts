@@ -1,7 +1,7 @@
 import { useReducer, useCallback } from 'react';
 import { initialState } from '../store/appState';
 import type { AppState, ViewName, InputMode } from '../store/appState';
-import type { Analysis, TranscriptEntry, ScreenshotEntry, BridgeState, LiveState as LiveStateAPI } from '../types/electron';
+import type { Analysis, TranscriptEntry, ScreenshotEntry, BridgeState, LiveState as LiveStateAPI, DiagnosisState } from '../types/electron';
 
 // ─── Action Types ─────────────────────────────────────────────────────────────
 
@@ -32,7 +32,8 @@ type Action =
   | { type: 'SET_INPUT_MODE'; mode: InputMode }
   | { type: 'SET_AI_SPEAKING'; value: boolean }
   | { type: 'SET_AI_THINKING'; value: boolean }
-  | { type: 'ANALYSIS_EVENT'; payload: AnalysisEventPayload };
+  | { type: 'ANALYSIS_EVENT'; payload: AnalysisEventPayload }
+  | { type: 'UPSERT_DIAGNOSIS'; diagnosis: DiagnosisState };
 
 interface AnalysisEventPayload {
   finding: string;
@@ -195,6 +196,23 @@ function reducer(state: AppState, action: Action): AppState {
       };
     }
 
+    case 'UPSERT_DIAGNOSIS': {
+      const idx = state.diagnosisResults.findIndex(
+        d => d.diagnosis_id === action.diagnosis.diagnosis_id
+      );
+      const updated = [...state.diagnosisResults];
+      if (idx === -1) {
+        updated.push(action.diagnosis);
+      } else {
+        updated[idx] = action.diagnosis;
+      }
+      return {
+        ...state,
+        diagnosisResults: updated,
+        activeView: 'Diagnosis',
+      };
+    }
+
     default:
       return state;
   }
@@ -243,6 +261,9 @@ export function useAppState() {
   const applyAnalysisEvent = useCallback((payload: AnalysisEventPayload) =>
     dispatch({ type: 'ANALYSIS_EVENT', payload }), []);
 
+  const upsertDiagnosis = useCallback((diagnosis: DiagnosisState) =>
+    dispatch({ type: 'UPSERT_DIAGNOSIS', diagnosis }), []);
+
   return {
     state,
     dispatch,
@@ -274,6 +295,7 @@ export function useAppState() {
       upsertScreenshot,
       setScreenshots,
       applyAnalysisEvent,
+      upsertDiagnosis,
     },
   };
 }

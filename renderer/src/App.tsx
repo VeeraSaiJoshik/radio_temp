@@ -4,7 +4,7 @@ import { useAppState } from './hooks/useAppState';
 import { TopBar } from './components/TopBar';
 import { ContentPanel } from './components/ContentPanel';
 import { InputBar } from './components/InputBar';
-import type { LiveEvent, ILiveMediaController } from './types/electron';
+import type { LiveEvent, ILiveMediaController, DiagnosisState } from './types/electron';
 //import type { InputMode } from './store/appState';
 
 export default function App() {
@@ -98,6 +98,12 @@ export default function App() {
       case 'live.screenshot':
         if (event.event) {
           actions.upsertScreenshot(event.event);
+        }
+        break;
+
+      case 'live.diagnosis':
+        if (event.diagnosis) {
+          actions.upsertDiagnosis(event.diagnosis as DiagnosisState);
         }
         break;
 

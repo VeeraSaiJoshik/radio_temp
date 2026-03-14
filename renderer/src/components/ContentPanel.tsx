@@ -4,6 +4,7 @@ import { MeasureView } from './MeasureView';
 import { CompareView } from './CompareView';
 import { QAView } from './QAView';
 import { TranscriptView } from './TranscriptView';
+import { DiagnosisView } from './DiagnosisView';
 
 interface ContentPanelProps {
   onCapture: () => void;
@@ -40,6 +41,7 @@ export function ContentPanel({ onCapture }: ContentPanelProps) {
       {state.activeView === 'Compare' && <CompareView />}
       {state.activeView === 'QA' && <QAView />}
       {state.activeView === 'Transcript' && <TranscriptView />}
+      {state.activeView === 'Diagnosis' && <DiagnosisView />}
     </section>
   );
 }

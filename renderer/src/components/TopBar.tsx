@@ -3,6 +3,7 @@ import type { ViewName } from '../store/appState';
 
 const NAV_VIEWS: { label: string; view: ViewName; shortcut: string }[] = [
   { label: 'Insights', view: 'Insights', shortcut: '⌘⌥A' },
+  { label: 'Diagnosis', view: 'Diagnosis', shortcut: '⌘⌥D' },
   { label: 'Measure', view: 'Measure', shortcut: '⌘⌥M' },
   { label: 'Compare', view: 'Compare', shortcut: '⌘⌥C' },
   { label: 'QA', view: 'QA', shortcut: '⌘⌥Q' },

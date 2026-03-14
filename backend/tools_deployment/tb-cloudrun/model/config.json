@@ -1,0 +1,16 @@
+{
+  "model_type": "vit",
+  "patch_size": 16,
+  "num_patches": 196,
+  "projection_dim": 512,
+  "num_heads": 8,
+  "num_encoder": 6,
+  "input_size": 224,
+  "num_classes": 1,
+  "class_names": [
+    "Normal",
+    "Tuberculosis"
+  ],
+  "framework": "pytorch",
+  "torch_dtype": "float32"
+}

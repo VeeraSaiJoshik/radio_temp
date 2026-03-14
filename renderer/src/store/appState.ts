@@ -1,6 +1,6 @@
-import type { Analysis, TranscriptEntry, ScreenshotEntry } from '../types/electron';
+import type { Analysis, TranscriptEntry, ScreenshotEntry, DiagnosisState } from '../types/electron';
 
-export type ViewName = 'Insights' | 'Measure' | 'Compare' | 'QA' | 'Transcript';
+export type ViewName = 'Insights' | 'Measure' | 'Compare' | 'QA' | 'Transcript' | 'Diagnosis';
 export type InputMode = 'notes' | 'transcript';
 
 export interface LiveState {
@@ -31,6 +31,7 @@ export interface AppState {
   inputMode: InputMode;
   aiSpeaking: boolean;
   aiThinking: boolean;
+  diagnosisResults: DiagnosisState[];
 }
 
 export const initialState: AppState = {
@@ -59,4 +60,5 @@ export const initialState: AppState = {
   inputMode: 'notes',
   aiSpeaking: false,
   aiThinking: false,
+  diagnosisResults: [],
 };

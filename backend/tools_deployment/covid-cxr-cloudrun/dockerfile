@@ -1,0 +1,11 @@
+FROM tensorflow/tensorflow:2.15.0
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir flask gunicorn pillow numpy
+
+COPY app.py .
+COPY model ./model
+
+ENV PORT=8080
+CMD ["gunicorn", "--timeout", "300", "-b", "0.0.0.0:8080", "app:app"]
