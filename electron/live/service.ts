@@ -146,8 +146,8 @@ export function cloneState(state: ServiceState): ServiceState {
     screenshot_history: state.screenshot_history.map((entry) => ({ ...entry })),
     session_id: state.session_id || '',
     enabled: state.enabled,
-    diagnosis_results: [],
-    monitoring_tabs: []
+    diagnosis_results: state.diagnosis_results.map((d) => ({ ...d })),
+    monitoring_tabs: [...state.monitoring_tabs]
   };
 }
 
@@ -177,6 +177,7 @@ export class ElectronLiveService {
   _hasVisualInput: boolean;
   _visualAvailability: 'pending' | 'ready' | 'unavailable';
   _autoStartMicPending: boolean;
+  _diagnosisStreamController: AbortController | null;
 
   constructor(options: ElectronLiveServiceOptions = {}) {
     this.runtimeConfig = options.runtimeConfig || getLiveRuntimeConfig();
@@ -236,6 +237,7 @@ export class ElectronLiveService {
     this._hasVisualInput = false;
     this._visualAvailability = 'pending';
     this._autoStartMicPending = false;
+    this._diagnosisStreamController = null;
   }
 
   getState(): ServiceState {
@@ -255,6 +257,8 @@ export class ElectronLiveService {
 
     this._stopRequested = false;
     this._connectLoopPromise = this._runConnectLoop();
+    this._diagnosisStreamController = new AbortController();
+    this._subscribeToDiagnosisUpdates(this._diagnosisStreamController.signal).catch(() => {});
   }
 
   async stop(): Promise<void> {
@@ -268,6 +272,11 @@ export class ElectronLiveService {
       } catch (error) {
         // Ignore close failures while shutting down.
       }
+    }
+
+    if (this._diagnosisStreamController) {
+      this._diagnosisStreamController.abort();
+      this._diagnosisStreamController = null;
     }
 
     if (this._connectLoopPromise) {
@@ -809,7 +818,11 @@ export class ElectronLiveService {
       }
 
       if (image_id) {
-        const diagnosisResponse = await fetch(`http://localhost:8000/database/diagnosis/${image_id}`);
+        const [diagnosisResponse, rawImageResponse] = await Promise.all([
+          fetch(`http://localhost:8000/database/diagnosis/${image_id}`),
+          fetch(`http://localhost:8000/database/raw_image/${image_id}`)
+        ]);
+
         if (diagnosisResponse.ok) {
           const diagnosisData = await diagnosisResponse.json();
           const diagnosisState: DiagnosisState = {
@@ -821,6 +834,20 @@ export class ElectronLiveService {
           };
           this._state.diagnosis_results.push(diagnosisState);
         }
+
+        if (rawImageResponse.ok) {
+          const rawImageData = await rawImageResponse.json();
+          this.eventSink({
+            type: 'live.raw_image',
+            image_id,
+            image_b64: rawImageData.image_b64
+          });
+        }
+
+        if (!this._state.monitoring_tabs.includes(image_id)) {
+          this._state.monitoring_tabs.push(image_id);
+        }
+        this._emitDiagnosisUpdate();
       }
 
       const result: ScreenshotToolResult = {
@@ -893,7 +920,7 @@ export class ElectronLiveService {
     return {
       status: 'error',
       image_id: requestId,
-      error: error && error.message ? error.message : String(error)
+      description: error && error.message ? error.message : String(error)
     };
   }
 
@@ -1012,6 +1039,69 @@ export class ElectronLiveService {
     }
     this._state.transcript_entries.push({ role, text: cleaned });
     this._state.transcript_entries = this._state.transcript_entries.slice(-100);
+  }
+
+  private async _subscribeToDiagnosisUpdates(signal: AbortSignal): Promise<void> {
+    while (!signal.aborted) {
+      try {
+        const response = await fetch('http://localhost:8000/database/diagnosis/stream', { signal });
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop()!;
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                this._handleDiagnosisUpdate(data);
+              } catch {
+                // ignore malformed SSE data
+              }
+            }
+          }
+        }
+      } catch {
+        if (signal.aborted) break;
+        await sleep(3000);
+      }
+    }
+  }
+
+  private _handleDiagnosisUpdate(data: Record<string, unknown>): void {
+    const image_id = data.image_id as string;
+    if (!image_id || !this._state.monitoring_tabs.includes(image_id)) return;
+
+    const diagnosisState: DiagnosisState = {
+      diagnosis_id: image_id,
+      progress_tree: data.progress_tree as DiagnosisState['progress_tree'],
+      percent_completion: data.percent_completion as number,
+      annotations: data.annotations as DiagnosisState['annotations'],
+      overall_diagnosis_context: data.overall_diagnosis_context as string
+    };
+
+    const index = this._state.diagnosis_results.findIndex((d) => d.diagnosis_id === image_id);
+    if (index !== -1) {
+      this._state.diagnosis_results[index] = diagnosisState;
+    } else {
+      this._state.diagnosis_results.push(diagnosisState);
+    }
+
+    this._emitDiagnosisUpdate();
+  }
+
+  private _emitDiagnosisUpdate(): void {
+    this.eventSink({
+      type: 'live.diagnosis_update',
+      diagnosis_results: this._state.diagnosis_results.map((d) => ({ ...d })),
+      monitoring_tabs: [...this._state.monitoring_tabs]
+    });
   }
 
   private _upsertScreenshot(entry: ScreenshotHistoryEntry): void {

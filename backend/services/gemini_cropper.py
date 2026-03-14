@@ -54,10 +54,6 @@ def smart_crop_image(image: str) -> CropResult | bool:
     image_info = ImageDataDB.model_validate(parsed)
     print(image_info)
 
-    cropped = img[y:y + h, x:x + w]
-    cv2.imshow("Cropped Image", cropped)
-    cv2.waitKey(-1)
-
     return CropResult(bounding_box=bounding_box, image_info=image_info)
 
 

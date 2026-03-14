@@ -3,14 +3,39 @@ from firebase_admin import credentials, firestore, db
 from firebase_admin.db import Reference as db_ref
 from firebase_admin.db import Event as db_event
 import os
+import multiprocessing
 from models import DBRecord, Image, ImageDataDB, PatientContext
 from datetime import datetime
+
+
+def _firestore_lookup_worker(cert_path, db_url, first_name, last_name, result_queue):
+    """Top-level function (required for multiprocessing pickling) that queries Firestore."""
+    try:
+        import firebase_admin as _fa
+        from firebase_admin import credentials as _creds, firestore as _fs
+        from models import PatientContext as _PC
+        if not _fa._apps:
+            _cred = _creds.Certificate(cert_path)
+            _fa.initialize_app(_cred)
+        _fb = _fs.client()
+        users_ref = _fb.collection("users")
+        for doc in users_ref.stream():
+            patient = _PC.model_validate({**doc.to_dict(), "id": doc.id})
+            if (patient.patient_first_name or "").lower() == first_name.lower() and \
+               (patient.patient_last_name or "").lower() == last_name.lower():
+                result_queue.put(patient.id)
+                return
+        result_queue.put("")
+    except Exception as e:
+        print(f"Firestore worker error: {e}")
+        result_queue.put("")
 
 class FirebaseDatabase:
     app_initialized = False
     def __init__(self):
         if not FirebaseDatabase.app_initialized:
-            cred = credentials.Certificate(os.getcwd() + "/services/firebase_certificate.json")
+            cert_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase_certificate.json")
+            cred = credentials.Certificate(cert_path)
             firebase_admin.initialize_app(cred)
             FirebaseDatabase.app_initialized = True
         
@@ -23,15 +48,22 @@ class FirebaseDatabase:
     
     def get_user_id_by_first_name(self, first_name, last_name) -> str | None:
         print("I started")
-        users_ref = self.fb.collection("users")
-        data = users_ref.stream()
-
-        for doc in data:
-            data = PatientContext.model_validate({**doc.to_dict(), "id": doc.id})
-            if data.patient_first_name.lower() == first_name.lower() and data.patient_last_name.lower() == last_name.lower():
-                return data.id
-
-        return ""
+        cert_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase_certificate.json")
+        db_url = "https://radiology-assistant-912c4-default-rtdb.firebaseio.com/"
+        result_queue = multiprocessing.Queue()
+        proc = multiprocessing.Process(
+            target=_firestore_lookup_worker,
+            args=(cert_path, db_url, first_name, last_name, result_queue)
+        )
+        proc.start()
+        proc.join(timeout=15)
+        if proc.is_alive():
+            print(f"Warning: Firestore query timed out looking up {first_name} {last_name}. Using empty user_id.")
+            proc.terminate()
+            proc.join()
+            return ""
+        result = result_queue.get() if not result_queue.empty() else ""
+        return result
 
     def get_rl_data(self, path) -> dict | None:
         return self.db.child(path).get()
