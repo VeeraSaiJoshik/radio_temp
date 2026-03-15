@@ -158,14 +158,14 @@ TB_STAGES = [
 ]
 
 
-# ── Patient 2: Maria Santos — Pneumonia False Negative ────────────────────────
+# ── Patient 2: Maria Santos — Pneumonia Positive ──────────────────────────────
 #
 #  Stage timeline:
 #    t=0s   Orchestrator in-progress, no children yet
 #    t=1.5s Chest Triage added, in-progress
-#    t=3s   Triage → negative, Pneumonia Classifier added, in-progress
-#    t=4.5s Pneumonia → negative, TB Detector added, in-progress
-#    t=6s   TB Detector → negative, 100% done, no annotations
+#    t=3s   Triage → positive, Pneumonia Classifier added, in-progress
+#    t=4.5s Pneumonia → positive, TB Detector added, in-progress
+#    t=6s   TB Detector → negative, full annotations + context, 100% done
 
 PNEUMONIA_STAGES = [
     lambda id: DiagnosisState(
@@ -195,7 +195,7 @@ PNEUMONIA_STAGES = [
             status="in-progress", model=_orch(),
             children=[
                 ModelNode(
-                    status="negative", model=_triage(),
+                    status="positive", model=_triage(),
                     children=[
                         ModelNode(status="in-progress", model=_pneumonia(), children=[])
                     ]
@@ -212,9 +212,9 @@ PNEUMONIA_STAGES = [
             status="in-progress", model=_orch(),
             children=[
                 ModelNode(
-                    status="negative", model=_triage(),
+                    status="positive", model=_triage(),
                     children=[
-                        ModelNode(status="negative", model=_pneumonia(), children=[]),
+                        ModelNode(status="positive", model=_pneumonia(), children=[]),
                         ModelNode(status="in-progress", model=_tb(), children=[])
                     ]
                 )
@@ -227,24 +227,40 @@ PNEUMONIA_STAGES = [
     lambda id: DiagnosisState(
         id=id, image_id=id,
         progress_tree=ModelNode(
-            status="negative", model=_orch(),
+            status="positive", model=_orch(),
             children=[
                 ModelNode(
-                    status="negative", model=_triage(),
+                    status="positive", model=_triage(),
                     children=[
-                        ModelNode(status="negative", model=_pneumonia(), children=[]),
+                        ModelNode(status="positive", model=_pneumonia(), children=[]),
                         ModelNode(status="negative", model=_tb(), children=[])
                     ]
                 )
             ]
         ),
         percent_completion=1.0,
-        annotations=[],
+        annotations=[
+            Annotation(
+                name="Left lower lobe consolidation",
+                description="Homogeneous opacity with air bronchograms — bacterial pneumonia pattern",
+                number=1,
+                annotations=[Rectangle(x=55, y=220, width=120, height=100, color="#ef4444")],
+                confidence="high"
+            ),
+            Annotation(
+                name="Right perihilar haziness",
+                description="Peribronchial thickening consistent with early pneumonic spread",
+                number=2,
+                annotations=[Rectangle(x=195, y=180, width=90, height=80, color="#f97316")],
+                confidence="medium"
+            )
+        ],
         overall_diagnosis_context=(
-            "NO ACUTE PATHOLOGY DETECTED: Initial clinical concern for pneumonia not "
-            "confirmed. Pneumonia Classifier returned 12.4% probability (negative). "
-            "TBViT returned 3.1% probability (negative). Lung fields clear bilaterally. "
-            "No pleural effusion. Recommend clinical correlation if symptoms persist."
+            "HIGH CONFIDENCE PNEUMONIA POSITIVE (91.7%): Pneumonia Classifier detected "
+            "left lower lobe consolidation with air bronchograms consistent with bacterial "
+            "pneumonia. TB excluded (TBViT 2.8%). Recommend chest CT for extent assessment, "
+            "sputum culture, CBC with differential, and empiric antibiotic therapy. "
+            "Follow-up X-ray in 6 weeks to confirm resolution."
         )
     ),
 ]

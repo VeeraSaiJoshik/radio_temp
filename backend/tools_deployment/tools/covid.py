@@ -1,0 +1,45 @@
+"""
+COVID tool — dual-model ensemble.
+
+Calls:
+  1. Hosted InceptionV3 model (covid-cxr-cloudrun, TensorFlow/Keras)
+  2. Custom ViT+MLP model (covid_vit, google/vit-base-patch16-224 backbone)
+Averages softmax scores → final prediction.
+
+Classes: COVID, Normal, Lung-Opacity, Viral Pneumonia
+
+Environment variables:
+  COVID_HOSTED_URL  — URL of the covid-cxr-cloudrun service
+  COVID_CUSTOM_URL  — URL of the covid_vit custom model service
+"""
+
+import os
+from .base import BaseDiseaseTool
+
+LABELS = ["COVID", "Normal", "Lung-Opacity", "Viral Pneumonia"]
+
+
+class CovidTool(BaseDiseaseTool):
+    HOSTED_URL = os.getenv(
+        "COVID_HOSTED_URL",
+        "https://covid-cxr-classifier-1021943706658.us-central1.run.app"
+    )
+    CUSTOM_URL = os.getenv(
+        "COVID_CUSTOM_URL",
+        "https://covid-vit-classifier-1021943706658.us-central1.run.app"
+    )
+
+    def predict(self, image_bytes: bytes) -> dict:
+        hosted = self._call_endpoint(self.HOSTED_URL, image_bytes)
+        custom = self._call_endpoint(self.CUSTOM_URL, image_bytes)
+
+        if hosted and custom:
+            scores = self._average_scores(hosted["scores"], custom["scores"])
+        elif hosted:
+            scores = hosted["scores"]
+        elif custom:
+            scores = custom["scores"]
+        else:
+            return {"prediction": "error", "scores": {}, "confidence": 0.0}
+
+        return self._build_result(scores)
